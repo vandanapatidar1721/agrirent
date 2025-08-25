@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contact Us - AgriRent</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="script.js" defer></script>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"/>
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <h2>🚜AgriRent</h2>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="why.html">why Us</a>
+      <a href="about.html">About</a>
+      <a href="contact.html" class="active">Contact</a>
+    </nav>
+    <div class="icons">
+      <div class="cart-icon" onclick="toggleCart()">
+        <i class="fas fa-shopping-cart"></i>
+        <span id="cart-count" class="badge">0</span>
+      </div>
+      <div class="fav-icon" onclick="toggleFav()">
+        <i class="fas fa-heart"></i>
+        <span id="fav-count" class="badge">0</span>
+      </div>
+      <div class="theme-toggle" onclick="toggleTheme()">
+        <i id="theme-icon" class="fas fa-sun"></i>
+      </div>
+    </div>
+  </header>
+
+  <!-- Contact Section -->
+  <section class="section contact-section">
+    <h1>Contact Us</h1>
+    <p class="subtitle">We’d love to hear from you! Fill out the form below or reach us directly.</p>
+
+    <div class="contact-container">
+      <!-- Contact Info -->
+      <div class="contact-info">
+        <h3>Get in Touch</h3>
+        <p><i class="fas fa-envelope"></i> info@agrirent.com</p>
+        <p><i class="fas fa-phone"></i> +91 9876543210</p>
+        <p><i class="fas fa-map-marker-alt"></i> Ajmer, Rajasthan, India</p>
+      </div>
+
+      <!-- Contact Form -->
+      <form class="contact-form">
+        <input type="text" placeholder="Your Name" required />
+        <input type="email" placeholder="Your Email" required />
+        <textarea rows="5" placeholder="Your Message" required></textarea>
+        <button type="submit">Send Message</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-container">
+      <div>
+        <h3>AgriRent</h3>
+        <p>Best platform to rent farming equipment easily.</p>
+      </div>
+      <div>
+        <h4>Quick Links</h4>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="#">Equipments</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <p>Email: info@agrirent.com</p>
+        <p>Phone: +91 9876543210</p>
+      </div>
+    </div>
+    <p class="copy">© 2025 AgriRent. All rights reserved.</p>
+  </footer>
+</body>
+</html>

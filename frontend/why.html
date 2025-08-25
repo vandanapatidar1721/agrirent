@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Why Us - AgriRent</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="script.js" defer></script>
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
+</head>
+
+<body>
+  <!-- Header -->
+  <header>
+    <h2>🚜 AgriRent</h2>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="why.html" class="active">Why Us</a>
+      <a href="about.html">about</a>      
+      <a href="contact.html">Contact</a>
+    </nav>
+
+    <!-- Icons -->
+    <div class="icons">
+      <div class="cart-icon" onclick="toggleCart()">
+        <i class="fas fa-shopping-cart"></i>
+        <span id="cart-count" class="badge">0</span>
+      </div>
+
+      <div class="fav-icon" onclick="toggleFav()">
+        <i class="fas fa-heart"></i>
+        <span id="fav-count" class="badge">0</span>
+      </div>
+
+      <div class="theme-toggle" onclick="toggleTheme()">
+        <i id="theme-icon" class="fas fa-sun"></i>
+      </div>
+    </div>
+  </header>
+
+  <!-- Why Us Section -->
+  <section class="why-section">
+    <h1>🌾 Why Choose AgriRent?</h1>
+    <p>
+      AgriRent is committed to providing farmers with the best agricultural equipment rental services. 
+      Here’s why thousands of farmers trust us every day.
+    </p>
+
+    <div class="why-content">
+      <div class="why-card">
+        <i class="fas fa-check-circle"></i>
+        <h3>Affordable Rentals</h3>
+        <p>
+          Get access to high-quality farming equipment at prices that suit every budget.
+        </p>
+      </div>
+
+      <div class="why-card">
+        <i class="fas fa-shield-alt"></i>
+        <h3>Reliable Equipment</h3>
+        <p>
+          All our machinery is maintained to ensure smooth operation and minimize downtime.
+        </p>
+      </div>
+
+      <div class="why-card">
+        <i class="fas fa-handshake"></i>
+        <h3>Trusted Service</h3>
+        <p>
+          Our team is dedicated to supporting farmers and delivering exceptional customer service.
+        </p>
+      </div>
+
+      <div class="why-card">
+        <i class="fas fa-leaf"></i>
+        <h3>Eco-Friendly Farming</h3>
+        <p>
+          We promote sustainable agriculture by providing modern, efficient equipment that reduces waste.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-container">
+      <div>
+        <h3><i class="fas fa-tractor"></i> AgriRent</h3>
+        <p>Best platform to rent farming equipment easily.</p>
+      </div>
+      <div>
+        <h4>Quick Links</h4>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="why.html">Why Us</a></li>
+          <li><a href="about.html">About</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <p>Email: info@agrirent.com</p>
+        <p>Phone: +91 9876543210</p>
+      </div>
+    </div>
+    <p class="copy">© 2025 AgriRent. All rights reserved.</p>
+  </footer>
+</body>
+</html>

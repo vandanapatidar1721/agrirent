@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- Font Awesome CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agriculture Equipment Rental</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="script.js" defer></script>
+</head>
+
+<body>
+  <!-- Header -->
+  <header>
+    <h2>🚜AgriRent</h2>
+    <nav>
+      <a href="index.html" class="active">Home</a>
+      <a href="why.html">Why Us</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+
+    <!-- Icons -->
+    <div class="icons">
+      <div class="cart-icon" onclick="toggleCart()">
+        <i class="fas fa-shopping-cart"></i>
+        <span id="cart-count" class="badge">0</span>
+      </div>
+      <div class="fav-icon" onclick="toggleFav()">
+        <i class="fas fa-heart"></i>
+        <span id="fav-count" class="badge">0</span>
+      </div>
+      <div class="theme-toggle" onclick="toggleTheme()">
+        <i id="theme-icon" class="fas fa-sun"></i>
+      </div>
+    </div>
+
+    <!-- Auth Buttons -->
+    <div class="auth-buttons">
+      <button id="loginBtn">Login</button>
+      <button id="signupBtn">Sign Up</button>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <h1>Rent Modern Farming Equipments Easily</h1>
+    <div class="search-bar">
+      <input type="text" id="search" placeholder="Search equipment or location..." onkeyup="searchItem()" />
+      <button onclick="searchItem()">Search</button>
+    </div>
+  </section>
+
+  <!-- Equipments -->
+  <section class="section">
+    <h2>Available Equipments</h2>
+    <div class="card-container" id="equipment-list"></div>
+  </section>
+
+  <!-- Favorite Sidebar -->
+  <div id="fav-sidebar" class="cart-sidebar">
+    <h3>Favorite Items</h3>
+    <ul id="fav-items"></ul>
+  </div>
+
+  <!-- Cart Sidebar -->
+  <div id="cart-sidebar" class="cart-sidebar">
+    <h3>Rented Items</h3>
+    <ul id="cart-items"></ul>
+    <div class="cart-footer">
+      <button id="total-btn">Total: ₹0</button>
+      <button onclick="payNow()">Pay Now</button>
+    </div>
+  </div>
+
+  <!-- Login Form Modal -->
+  <div id="loginForm" class="modal">
+    <div class="modal-content">
+      <span class="close" id="closeLogin">&times;</span>
+      <h2><i class="fas fa-sign-in-alt"></i> Login</h2>
+      <input type="text" placeholder="Username" />
+      <input type="password" placeholder="Password" />
+      <button>Submit</button>
+    </div>
+  </div>
+
+  <!-- Sign Up Form Modal -->
+  <div id="signupForm" class="modal">
+    <div class="modal-content">
+      <span class="close" id="closeSignup">&times;</span>
+      <h2><i class="fas fa-user-plus"></i> Sign Up</h2>
+      <input type="text" placeholder="Username" />
+      <input type="email" placeholder="Email" />
+      <input type="password" placeholder="Password" />
+      <button>Register</button>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-container">
+      <div>
+        <h3><i class="fas fa-tractor"></i> AgriRent</h3>
+        <p>Best platform to rent farming equipment easily.</p>
+      </div>
+      <div>
+        <h4>Quick Links</h4>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="why.html">Why Us</a></li>
+          <li><a href="about.html">About</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <p>Email: info@agrirent.com</p>
+        <p>Phone: +91 9876543210</p>
+      </div>
+    </div>
+    <p class="copy">© 2025 AgriRent. All rights reserved.</p>
+  </footer>
+</body>
+
+</html>

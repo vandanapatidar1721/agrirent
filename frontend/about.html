@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>About Us - AgriRent</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="script.js" defer></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
+</head>
+
+<body>
+  <!-- Header -->
+  <header>
+    <h2></i> 🚜AgriRent</h2>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="why.html">Why Us</a>
+      <a href="about.html" class="active">About</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+
+    <!-- Icons -->
+    <div class="icons">
+      <div class="cart-icon" onclick="toggleCart()">
+        <i class="fas fa-shopping-cart"></i>
+        <span id="cart-count" class="badge">0</span>
+      </div>
+
+      <div class="fav-icon" onclick="toggleFav()">
+        <i class="fas fa-heart"></i>
+        <span id="fav-count" class="badge">0</span>
+      </div>
+
+      <div class="theme-toggle" onclick="toggleTheme()">
+        <i id="theme-icon" class="fas fa-sun"></i>
+      </div>
+    </div>
+  </header>
+
+  <!-- About Section -->
+  <section class="about-section">
+    <h1>🌱 About AgriRent</h1>
+    <p>
+      AgriRent is India’s leading platform for renting modern agricultural
+      equipment. Our mission is to empower farmers by giving them easy access
+      to advanced machinery at affordable prices.
+    </p>
+
+    <div class="about-content">
+      <div class="about-card">
+        <i class="fas fa-leaf"></i>
+        <h3>Our Mission</h3>
+        <p>
+          To make farming smarter, easier, and more efficient by providing
+          access to quality tools and equipment.
+        </p>
+      </div>
+
+      <div class="about-card">
+        <i class="fas fa-users"></i>
+        <h3>Who We Serve</h3>
+        <p>
+          We work with farmers, agri-businesses, and communities across India
+          to ensure agriculture thrives.
+        </p>
+      </div>
+
+      <div class="about-card">
+        <i class="fas fa-seedling"></i>
+        <h3>Our Vision</h3>
+        <p>
+          To create a future where every farmer can use modern equipment
+          without financial stress.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-container">
+      <div>
+        <h3><i class="fas fa-tractor"></i> AgriRent</h3>
+        <p>Best platform to rent farming equipment easily.</p>
+      </div>
+      <div>
+        <h4>Quick Links</h4>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="why.html">Why Us</a></li>
+          <li><a href="about.html">About</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <p>Email: info@agrirent.com</p>
+        <p>Phone: +91 9876543210</p>
+      </div>
+    </div>
+    <p class="copy">© 2025 AgriRent. All rights reserved.</p>
+  </footer>
+</body>
+
+</html>
