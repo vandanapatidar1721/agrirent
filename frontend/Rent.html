@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rent Your Equipment | AgriRent</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
+</head>
+<body class="light-mode">
+
+  <!-- Header -->
+  <header>
+    <h2>🚜AgriRent</h2>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="why.html">Why Us</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+      <a href="rent.html" class="active">Rent Out Equipment</a>
+    </nav>
+    <!-- Light/Dark Toggle -->
+    <div class="theme-toggle" onclick="toggleTheme()">
+      <i id="theme-icon" class="fas fa-sun"></i>
+    </div>
+  </header>
+
+  <!-- Rent Form Section -->
+  <section class="rent-section">
+    <h1>Rent Out Your Equipment</h1>
+    <p>List your farming equipment here so others can rent it easily.</p>
+    <form id="rentForm">
+      <input type="text" placeholder="Equipment Name" id="equipmentName" required />
+      <input type="number" placeholder="Price per day (₹)" id="equipmentPrice" required />
+      <input type="text" placeholder="Location" id="equipmentLocation" required />
+      <input type="file" id="equipmentImage" accept="image/*" required />
+      <button type="submit">Submit</button>
+      
+    </form>
+    <p id="formMessage"></p>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-container">
+      <div>
+        <h3><i class="fas fa-tractor"></i> AgriRent</h3>
+        <p>Best platform to rent farming equipment easily.</p>
+      </div>
+      <div>
+        <h4>Quick Links</h4>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="why.html">Why Us</a></li>
+          <li><a href="about.html">About</a></li>
+          <li><a href="contact.html">Contact</a></li>
+          <li><a href="rent.html">Rent Out Equipment</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <p>Email: info@agrirent.com</p>
+        <p>Phone: +91 9876543210</p>
+      </div>
+    </div>
+    <p class="copy">© 2025 AgriRent. All rights reserved.</p>
+  </footer>
+
+</body>
+</html>

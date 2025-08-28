@@ -25,4 +25,13 @@ function allowRoles(...roles) {
   };
 }
 
-module.exports = { auth, allowRoles };
+// 🔹 JWT Generate function add kiya
+function generateToken(user) {
+  return jwt.sign(
+    { id: user._id, role: user.role },   // payload
+    process.env.JWT_SECRET,              // secret
+    { expiresIn: "1h" }                  // expiry
+  );
+}
+
+module.exports = { auth, allowRoles, generateToken };
