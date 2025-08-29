@@ -141,20 +141,6 @@ app.post("/favorites/toggle", async (req, res) => {
   }
 });
 
-// ------------------ RENT FORM ROUTES ------------------
-// app.post("/rent/submit", async (req, res) => {
-//   const { userId, equipmentName, pricePerDay, description, image } = req.body;
-//   try {
-//     const user = await User.findById(userId);
-//     if (!user) return res.status(404).json({ error: "User not found" });
-//     const rentForm = new RentForm({ userId, equipmentName, pricePerDay, description, image });
-//     await rentForm.save();
-
-//     res.status(201).json({ message: "Rent submitted successfully", rentForm });
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// });
 app.post("/rent/submit", async (req, res) => {
   const { userId, name, price, description, imageUrl, location } = req.body;
 

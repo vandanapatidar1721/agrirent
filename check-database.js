@@ -42,7 +42,7 @@ async function checkDatabase() {
     console.log('✅ Disconnected from MongoDB');
     
   } catch (error) {
-    console.error('❌ Database check failed:', error.message);
+    console.error('Database check failed:', error.message);
   }
 }
 
