@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const bcrypt = require("bcrypt");
-const { auth } = require("./middleware/auth");
+const { auth, allowRoles } = require("./middleware/auth");
 
 dotenv.config();
 
@@ -11,7 +11,8 @@ const app = express();
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+// Allow larger JSON payloads (admin images are sent as base64 strings)
+app.use(express.json({ limit: "20mb" }));
 
 // ---------- API Logging Middleware ----------
 app.use((req, res, next) => {
@@ -44,13 +45,14 @@ const RentForm = require("./form-models/Equipment");
 
 // ------------------ AUTH ROUTES ------------------
 app.post("/auth/signup", async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, role } = req.body;
   try {
+    const normalizedRole = role && ["renter", "farmer", "admin"].includes(role) ? role : "renter";
     const existingUser = await User.findOne({ email });
     if (existingUser) return res.status(400).json({ error: "User already exists" });
 
     // Create user with plain password - the User model will encrypt it automatically
-    const user = new User({ name, email, password });
+    const user = new User({ name, email, password, role: normalizedRole });
     await user.save();
 
     // Remove password from response for security
@@ -72,7 +74,7 @@ app.post("/auth/signup", async (req, res) => {
 });
 
 app.post("/auth/login", async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, role } = req.body;
   try {
     if (!email || !password) {
       return res.status(400).json({ error: "Email and password are required" });
@@ -83,6 +85,10 @@ app.post("/auth/login", async (req, res) => {
 
     const isMatch = await user.comparePassword(password);
     if (!isMatch) return res.status(400).json({ error: "Invalid credentials" });
+
+    if (role && role !== user.role) {
+      return res.status(403).json({ error: "Role mismatch for this account" });
+    }
 
     // Remove password from user object before sending to client
     const userObj = user.toObject();
@@ -102,7 +108,7 @@ app.post("/auth/login", async (req, res) => {
 });
 
 // ------------------ PRODUCT ROUTES ------------------
-app.post("/card/add", auth, async (req, res) => {
+app.post("/card/add", auth, allowRoles("admin"), async (req, res) => {
   const { name, price, description, image, userId } = req.body;
   try {
     if (!name || !price) return res.status(400).json({ error: "Name and Price are required" });
@@ -126,7 +132,7 @@ app.get("/card/all", async (req, res) => {
 });
 
 // Delete a product by id
-app.delete("/card/:id", auth, async (req, res) => {
+app.delete("/card/:id", auth, allowRoles("admin"), async (req, res) => {
   const { id } = req.params;
   try {
     const product = await Product.findById(id);
@@ -134,6 +140,11 @@ app.delete("/card/:id", auth, async (req, res) => {
       return res.status(404).json({ error: "Product not found" });
     }
     const requesterId = req.user && req.user.id;
+    const requesterRole = req.user && req.user.role;
+
+    if (requesterRole !== "admin") {
+      return res.status(403).json({ error: "Only admin can delete products" });
+    }
     if (product.owner && requesterId && String(product.owner) !== String(requesterId)) {
       return res.status(403).json({ error: "Not allowed to delete this product" });
     }
@@ -145,7 +156,7 @@ app.delete("/card/:id", auth, async (req, res) => {
 });
 
 // ------------------ CART ROUTES ------------------
-app.post("/cart/add", auth, async (req, res) => {
+app.post("/cart/add", auth, allowRoles("renter"), async (req, res) => {
   const { userId, productId } = req.body;
   try {
     const id = (req.user && req.user.id) || userId;
@@ -166,7 +177,7 @@ app.post("/cart/add", auth, async (req, res) => {
   }
 });
 
-app.post("/cart/remove", auth, async (req, res) => {
+app.post("/cart/remove", auth, allowRoles("renter"), async (req, res) => {
   const { userId, productId } = req.body;
   try {
     const id = (req.user && req.user.id) || userId;
@@ -182,7 +193,7 @@ app.post("/cart/remove", auth, async (req, res) => {
 });
 
 // ------------------ FAVORITES ROUTES ------------------
-app.post("/favorites/toggle", auth, async (req, res) => {
+app.post("/favorites/toggle", auth, allowRoles("renter"), async (req, res) => {
   const { userId, productId } = req.body;
   try {
     const id = (req.user && req.user.id) || userId;
@@ -202,13 +213,16 @@ app.post("/favorites/toggle", auth, async (req, res) => {
   }
 });
 
-app.post("/rent/submit", auth, async (req, res) => {
-  const { userId, name, price, description, imageUrl, location } = req.body;
+app.post("/rent/submit", auth, allowRoles("admin"), async (req, res) => {
+  const { userId, name, price, description, imageUrl, location, hasDriver, driverPrice } = req.body;
 
   try {
     const id = (req.user && req.user.id) || userId;
     const user = await User.findById(id);
     if (!user) return res.status(404).json({ error: "User not found" });
+
+    const normalizedHasDriver = Boolean(hasDriver);
+    const normalizedDriverPrice = normalizedHasDriver ? parseInt(driverPrice) || 0 : 0;
 
     // Create a new product that will show up in the equipment list
     const newProduct = new Product({
@@ -216,6 +230,9 @@ app.post("/rent/submit", auth, async (req, res) => {
       price: parseInt(price),
       description: description || `${name} available for rent`,
       image: imageUrl || 'https://images.unsplash.com/photo-1592840496694-26d035b52b48?w=500&h=300&fit=crop',
+      location,
+      hasDriver: normalizedHasDriver,
+      driverPrice: normalizedDriverPrice,
       owner: id
     });
 
@@ -228,7 +245,9 @@ app.post("/rent/submit", auth, async (req, res) => {
       price,
       description,
       imageUrl,
-      location
+      location,
+      hasDriver: normalizedHasDriver,
+      driverPrice: normalizedDriverPrice,
     });
 
     await rentForm.save();

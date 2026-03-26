@@ -7,10 +7,10 @@ const userSchema = new mongoose.Schema({
   cart: [
     {
       productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
-      quantity: { type: Number, default: 1 }
-    }
+      quantity: { type: Number, default: 1 },
+    },
   ],
-  favourites: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }]
+  favourites: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
 });
 
 module.exports = mongoose.model("User", userSchema);

@@ -15,17 +15,48 @@
   <!-- Header -->
   <header>
     <h2>🚜AgriRent</h2>
-    <nav>
-      <a href="index.html">Home</a>
-      <a href="why.html">why Us</a>
-      <a href="about.html">About</a>
-      <a href="contact.html" class="active">Contact</a>
-      <a href="rent.html">Rent Out Equipment</a>
-    </nav>
+
+    <!-- Desktop Navigation -->
+    <div class="desktop-nav">
+      <nav>
+        <a href="index.html">Home</a>
+        <a href="why.html">Why Us</a>
+        <a href="about.html">About</a>
+        <a href="contact.html" class="active">Contact</a>
+        <a href="Rent.html">Rent Out Equipment</a>
+      </nav>
+      <!-- Theme Toggle -->
       <div class="theme-toggle" onclick="toggleTheme()">
         <i id="theme-icon" class="fas fa-sun"></i>
       </div>
     </div>
+
+    <!-- Auth Buttons (Login/Logout) -->
+    <div class="auth-buttons"></div>
+
+    <!-- Hamburger Menu Button -->
+    <button class="hamburger" aria-label="Toggle menu" onclick="toggleMenu()">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
+    <!-- Mobile Navigation Menu -->
+    <nav class="mobile-nav" id="mobileNav">
+      <a href="index.html">Home</a>
+      <a href="why.html">Why Us</a>
+      <a href="about.html">About</a>
+      <a href="contact.html" class="active">Contact</a>
+        <a href="Rent.html">Rent Out Equipment</a>
+      
+      <!-- Mobile Theme Toggle -->
+      <div class="mobile-theme-toggle">
+        <div class="theme-toggle" onclick="toggleTheme()">
+          <i id="mobile-theme-icon" class="fas fa-sun"></i>
+          <span>Toggle Theme</span>
+        </div>
+      </div>
+    </nav>
   </header>
 
   <!-- Contact Section -->
@@ -65,7 +96,7 @@
           <li><a href="why.html">Why Us</a></li>
           <li><a href="about.html">about</a></li>
           <li><a href="contact.html">Contact</a></li>
-           <li><a href="rent.html">Rent Out Equipment</a></li>
+           <li><a href="Rent.html">Rent Out Equipment</a></li>
         </ul>
       </div>
       <div>

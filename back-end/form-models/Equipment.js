@@ -5,6 +5,8 @@ const equipmentSchema = new mongoose.Schema({
   price: { type: Number, required: true },
   location: { type: String, required: true },
   imageUrl: { type: String, required: true },
+  hasDriver: { type: Boolean, default: false },
+  driverPrice: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now },
 });
 

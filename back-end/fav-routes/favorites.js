@@ -5,7 +5,7 @@ const User = require("../models/User"); // apna User model ka sahi path
 // Add to favorites
 router.post("/add", async (req, res) => {
   const { userId, productId } = req.body;
-  console.log("📩 Fav Add Request:", req.body);
+  console.log(" Fav Add Request:", req.body);
 
   try {
     const user = await User.findById(userId);
@@ -13,17 +13,17 @@ router.post("/add", async (req, res) => {
 
     if (!user.favorites.includes(productId)) {
       user.favorites.push(productId);
-      console.log(`✅ Added to favorites: ${productId}`);
+      console.log(` Added to favorites: ${productId}`);
     } else {
       console.log(`⚠️ Already in favorites: ${productId}`);
     }
 
     await user.save();
-    console.log("🎉 Updated Favorites:", user.favorites);
+    console.log(" Updated Favorites:", user.favorites);
 
     res.status(200).json(user.favorites);
   } catch (err) {
-    console.error("❌ Error in add favorites:", err);
+    console.error(" Error in add favorites:", err);
     res.status(500).json({ error: err.message });
   }
 });

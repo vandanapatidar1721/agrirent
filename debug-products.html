@@ -64,7 +64,7 @@
     </style>
 </head>
 <body>
-    <h1>🔍 Debug Products API</h1>
+    <h1> Debug Products API</h1>
     
     <div class="debug-section">
         <h2>1. Test Backend Connection</h2>
@@ -119,27 +119,27 @@
         async function testBackendConnection() {
             try {
                 const data = await apiCall('/');
-                showResult('backend-result', `✅ Backend connected successfully!\nResponse: ${data}`);
+                showResult('backend-result', ` Backend connected successfully!\nResponse: ${data}`);
             } catch (error) {
-                showResult('backend-result', `❌ Backend connection failed: ${error.message}`, true);
+                showResult('backend-result', ` Backend connection failed: ${error.message}`, true);
             }
         }
 
         async function testCardAll() {
             try {
                 const data = await apiCall('/card/all');
-                showResult('product-result', `✅ /card/all successful!\nProducts count: ${data.length}\nData: ${JSON.stringify(data, null, 2)}`);
+                showResult('product-result', ` /card/all successful!\nProducts count: ${data.length}\nData: ${JSON.stringify(data, null, 2)}`);
             } catch (error) {
-                showResult('product-result', `❌ /card/all failed: ${error.message}`, true);
+                showResult('product-result', ` /card/all failed: ${error.message}`, true);
             }
         }
 
         async function testProductAll() {
             try {
                 const data = await apiCall('/product/all');
-                showResult('product-result', `✅ /product/all successful!\nProducts count: ${data.length}\nData: ${JSON.stringify(data, null, 2)}`);
+                showResult('product-result', ` /product/all successful!\nProducts count: ${data.length}\nData: ${JSON.stringify(data, null, 2)}`);
             } catch (error) {
-                showResult('product-result', `❌ /product/all failed: ${error.message}`, true);
+                showResult('product-result', ` /product/all failed: ${error.message}`, true);
             }
         }
 
@@ -165,7 +165,7 @@
                 
                 document.getElementById('display-result').innerHTML = html;
             } catch (error) {
-                showResult('display-result', `❌ Failed to display products: ${error.message}`, true);
+                showResult('display-result', ` Failed to display products: ${error.message}`, true);
             }
         }
     </script>

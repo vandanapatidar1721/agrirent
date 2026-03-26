@@ -24,24 +24,31 @@ body.dark-mode {
 }
 
 /* ===== Header / Navbar ===== */
-header, .navbar {
+header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 15px 50px;
-  background-color: var(--header-bg, #2e7d32);
+  background-color: #2e7d32;
   color: white;
   position: sticky;
   top: 0;
   z-index: 1000;
 }
 
-header h2, .navbar .logo {
+header h2 {
   font-size: 28px;
   font-weight: bold;
 }
 
-header nav a {
+/* Desktop Navigation */
+.desktop-nav {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+
+.desktop-nav nav a {
   color: white;
   text-decoration: none;
   margin-left: 25px;
@@ -49,9 +56,168 @@ header nav a {
   transition: 0.3s;
 }
 
-header nav a.active,
-header nav a:hover {
-  color: black;
+/* Hamburger Menu Button */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  padding: 8px;
+  position: relative;
+  z-index: 1001;
+}
+
+.hamburger span {
+  width: 24px;
+  height: 2px;
+  background: #fff;
+  display: block;
+  transition: 0.3s;
+  transform-origin: center;
+}
+
+/* Hamburger Animation */
+.hamburger.active span:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+
+.hamburger.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger.active span:nth-child(3) {
+  transform: rotate(-45deg) translate(7px, -6px);
+}
+
+/* Prevent body scroll when menu is open */
+body.menu-open {
+  overflow: hidden;
+}
+
+/* Mobile Navigation */
+.mobile-nav {
+  display: none;
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  width: 280px;
+  max-width: 85vw;
+  background-color: #000;
+  flex-direction: column;
+  padding: 15px;
+  box-shadow: -4px 4px 15px rgba(0,0,0,0.3);
+  border-radius: 8px 0 8px 8px;
+  margin-top: 0;
+  z-index: 1002;
+  overflow-y: auto;
+}
+
+.mobile-nav.show {
+  display: flex;
+}
+
+.mobile-nav a {
+  color: white;
+  text-decoration: none;
+  padding: 10px 15px;
+  font-weight: 500;
+  border-radius: 5px;
+  margin: 2px 0;
+  transition: 0.3s;
+  display: block;
+}
+
+.mobile-nav a:hover {
+  color: #ffeb3b;
+  background-color: rgba(255,255,255,0.1);
+  padding-left: 20px;
+}
+
+.mobile-nav a.active {
+  background-color: rgba(255,235,59,0.2);
+  color: #ffeb3b;
+}
+
+/* Mobile Icons and Auth */
+.mobile-icons {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255,255,255,0.2);
+}
+
+.mobile-icons .cart-icon,
+.mobile-icons .fav-icon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 15px;
+  cursor: pointer;
+  color: white;
+  transition: 0.3s;
+  border-radius: 5px;
+  margin: 2px 0;
+}
+
+.mobile-icons .cart-icon:hover,
+.mobile-icons .fav-icon:hover {
+  color: #ffeb3b;
+  background-color: rgba(255,255,255,0.1);
+  padding-left: 20px;
+}
+
+.mobile-icons .auth-buttons {
+  margin-top: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mobile-icons .auth-buttons button {
+  width: 100%;
+  padding: 10px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  background-color: #28a745;
+  color: #fff;
+  transition: 0.3s;
+}
+
+.mobile-icons .auth-buttons button:hover {
+  background-color: #218838;
+}
+
+/* Mobile Theme Toggle */
+.mobile-theme-toggle {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255,255,255,0.2);
+}
+
+.mobile-theme-toggle .theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  color: white;
+  transition: 0.3s;
+  padding: 10px 15px;
+  border-radius: 5px;
+}
+
+.mobile-theme-toggle .theme-toggle:hover {
+  color: #ffeb3b;
+  background-color: rgba(255,255,255,0.1);
+  padding-left: 20px;
+}
+
+.desktop-nav nav a.active,
+.desktop-nav nav a:hover {
+  color: #ffeb3b;
 }
 
 .icons {
@@ -372,19 +538,20 @@ header nav a:hover {
 .cart-sidebar {
   position: fixed;
   top: 0;
-  right: -300px;
+  right: 0;
   width: 300px;
   height: 100%;
   background: #fff;
   box-shadow: -2px 0 10px rgba(0,0,0,0.1);
   padding: 20px;
   overflow-y: auto;
-  transition: 0.3s;
+  transform: translateX(100%);
+  transition: transform 0.3s;
   z-index: 1001;
 }
 
 .cart-sidebar.active {
-  right: 0;
+  transform: translateX(0);
 }
 
 .cart-sidebar h3 {
@@ -538,16 +705,37 @@ footer {
 
 /* ===== Responsive ===== */
 @media screen and (max-width: 768px) {
-  header, .navbar {
-    flex-direction: column;
-    gap: 15px;
+  header {
+    padding: 12px 20px;
   }
 
-  .footer-container {
-    flex-direction: column;
-    align-items: flex-start;
+  /* Hide desktop navigation on mobile */
+  .desktop-nav {
+    display: none;
   }
 
+  /* Show hamburger menu on mobile */
+  .hamburger {
+    display: flex;
+  }
+
+  /* Mobile navigation styles */
+  .mobile-nav {
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.25s ease, opacity 0.25s ease;
+  }
+
+  .mobile-nav.show {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Adjust main content padding for mobile */
   .hero {
     padding: 60px 20px;
   }
@@ -561,12 +749,44 @@ footer {
     gap: 10px;
   }
 
+  .search-bar input {
+    width: 100%;
+    max-width: 300px;
+  }
+
   .about-content {
     grid-template-columns: 1fr;
   }
 
   .why-content {
     grid-template-columns: 1fr;
+  }
+
+  .footer-container {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  /* Contact form adjustments */
+  .contact-container {
+    flex-direction: column;
+  }
+
+  .contact-info,
+  .contact-form {
+    flex: none;
+  }
+
+  /* Modal adjustments for mobile */
+  .modal-content {
+    width: 90%;
+    max-width: 350px;
+    margin: 20px;
+  }
+
+  /* Cart sidebar adjustments */
+  .cart-sidebar {
+    width: 100%;
   }
 }
 
@@ -760,15 +980,31 @@ footer {
   color: #ffeb3b;
 }
 
-/* ===== Responsive ===== */
-@media screen and (max-width: 768px) {
+/* ===== Additional Mobile Styles ===== */
+@media screen and (max-width: 480px) {
   header {
-    flex-direction: column;
-    gap: 15px;
+    padding: 10px 15px;
   }
 
-  .footer-container {
-    flex-direction: column;
-    align-items: flex-start;
+  header h2 {
+    font-size: 24px;
+  }
+
+  .mobile-nav {
+    padding: 15px;
+  }
+
+  .hero h1 {
+    font-size: 28px;
+  }
+
+  .search-bar input {
+    font-size: 14px;
+    padding: 10px 12px;
+  }
+
+  .search-bar button {
+    padding: 10px 16px;
+    font-size: 14px;
   }
 }

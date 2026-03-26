@@ -16,29 +16,66 @@
   <header>
     <h2>🚜AgriRent</h2>
 
-    <nav>
+    <!-- Desktop Navigation and Icons -->
+    <div class="desktop-nav">
+      <nav>
+        <a href="index.html" class="active">Home</a>
+        <a href="why.html">Why Us</a>
+        <a href="about.html">About</a>
+        <a href="contact.html">Contact</a>
+        <a href="Rent.html">Rent Out Equipment</a>
+      </nav>
+      <!-- Icons -->
+      <div class="icons">
+        <div class="cart-icon" onclick="toggleCart()">
+          <i class="fas fa-shopping-cart"></i>
+          <span id="cart-count" class="badge">0</span>
+        </div>
+        <div class="fav-icon" onclick="toggleFav()">
+          <i class="fas fa-heart"></i>
+          <span id="fav-count" class="badge">0</span>
+        </div>
+        <!-- Auth Buttons -->
+        <div class="auth-buttons">
+          <button id="loginBtn">Login</button>
+          <button id="signupBtn">Sign Up</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hamburger Menu Button -->
+    <button class="hamburger" aria-label="Toggle menu" onclick="toggleMenu()">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
+    <!-- Mobile Navigation Menu -->
+    <nav class="mobile-nav" id="mobileNav">
       <a href="index.html" class="active">Home</a>
       <a href="why.html">Why Us</a>
       <a href="about.html">About</a>
       <a href="contact.html">Contact</a>
-      <a href="rent.html">Rent Out Equipment</a>
+      <a href="Rent.html">Rent Out Equipment</a>
+      
+      <!-- Mobile Auth and Icons -->
+      <div class="mobile-icons">
+        <div class="cart-icon" onclick="toggleCart()">
+          <i class="fas fa-shopping-cart"></i>
+          <span>Cart</span>
+          <span id="mobile-cart-count" class="badge">0</span>
+        </div>
+        <div class="fav-icon" onclick="toggleFav()">
+          <i class="fas fa-heart"></i>
+          <span>Favorites</span>
+          <span id="mobile-fav-count" class="badge">0</span>
+        </div>
+        <div class="auth-buttons">
+          <button id="mobile-loginBtn">Login</button>
+          <button id="mobile-signupBtn">Sign Up</button>
+        </div>
+      </div>
     </nav>
-    <!-- Icons -->
-    <div class="icons">
-      <div class="cart-icon" onclick="toggleCart()">
-        <i class="fas fa-shopping-cart"></i>
-        <span id="cart-count" class="badge">0</span>
-      </div>
-      <div class="fav-icon" onclick="toggleFav()">
-        <i class="fas fa-heart"></i>
-        <span id="fav-count" class="badge">0</span>
-      </div>
-
-    <!-- Auth Buttons -->
-    <div class="auth-buttons">
-      <button id="loginBtn">Login</button>
-      <button id="signupBtn">Sign Up</button>
-    </div>
   </header>
 
  <!-- Hero Section -->
@@ -57,13 +94,13 @@
 
   <!-- Favorite Sidebar -->
   <div id="fav-sidebar" class="cart-sidebar">
-    <h3>Favorite Items</h3>
+    <h3>Favorite Items <span class="close" onclick="toggleFav()" style="cursor:pointer; float:right;">&times;</span></h3>
     <ul id="fav-items"></ul>
   </div>
 
   <!-- Cart Sidebar -->
   <div id="cart-sidebar" class="cart-sidebar">
-    <h3>Rented Items</h3>
+    <h3>Rented Items <span class="close" onclick="toggleCart()" style="cursor:pointer; float:right;">&times;</span></h3>
     <ul id="cart-items"></ul>
     <div class="cart-footer">
       <button id="total-btn">Total: ₹0</button>
@@ -76,7 +113,11 @@
     <div class="modal-content">
       <span class="close" id="closeLogin">&times;</span>
       <h2><i class="fas fa-sign-in-alt"></i> Login</h2>
-      <input type="text" placeholder="Username" />
+      <input type="text" placeholder="email" />
+      <select id="loginRole" style="width:100%; padding:10px; border-radius:6px; border:1px solid #ccc; margin:10px 0;">
+        <option value="renter">User</option>
+        <option value="admin">Admin</option>
+      </select>
       <input type="password" placeholder="Password" />
       <button>Submit</button>
     </div>
@@ -89,6 +130,10 @@
       <h2><i class="fas fa-user-plus"></i> Sign Up</h2>
       <input type="text" placeholder="Username" />
       <input type="email" placeholder="Email" />
+      <select id="signupRole" style="width:100%; padding:10px; border-radius:6px; border:1px solid #ccc; margin:10px 0;">
+        <option value="renter">User</option>
+        <option value="admin">Admin</option>
+      </select>
       <input type="password" placeholder="Password" />
       <button>Register</button>
     </div>
@@ -108,7 +153,7 @@
           <li><a href="why.html">Why Us</a></li>
           <li><a href="about.html">About</a></li>
           <li><a href="contact.html">Contact</a></li>
-           <li><a href="rent.html">Rent Out Equipment</a></li>
+           <li><a href="Rent.html">Rent Out Equipment</a></li>
         </ul>
       </div>
       <div>

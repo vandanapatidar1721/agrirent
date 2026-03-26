@@ -27,7 +27,7 @@ const userSchema = new mongoose.Schema(
       default: "renter",
     },
 
-    // ✅ Reset Password Fields
+    //  Reset Password Fields
     resetPasswordToken: {
       type: String,
     },
@@ -48,7 +48,7 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// ✅ Password Hash Before Save
+//  Password Hash Before Save
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   const salt = await bcrypt.genSalt(10);
@@ -56,12 +56,12 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
-// ✅ Compare Password
+//  Compare Password
 userSchema.methods.comparePassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// ✅ Generate JWT
+//  Generate JWT
 userSchema.methods.generateJWT = function () {
   return jwt.sign(
     { id: this._id, role: this.role },

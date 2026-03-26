@@ -121,9 +121,9 @@
         async function testBackendConnection() {
             try {
                 const data = await apiCall('/');
-                showResult('backend-result', `✅ Backend connected successfully!<br>Response: ${data}`);
+                showResult('backend-result', ` Backend connected successfully!<br>Response: ${data}`);
             } catch (error) {
-                showResult('backend-result', `❌ Backend connection failed: ${error.message}`, true);
+                showResult('backend-result', ` Backend connection failed: ${error.message}`, true);
             }
         }
 
@@ -139,16 +139,16 @@
                     })
                 });
                 testUser = data.user;
-                showResult('auth-result', `✅ Signup successful!<br>User ID: ${data.user._id}<br>Email: ${data.user.email}`);
+                showResult('auth-result', ` Signup successful!<br>User ID: ${data.user._id}<br>Email: ${data.user.email}`);
             } catch (error) {
-                showResult('auth-result', `❌ Signup failed: ${error.message}`, true);
+                showResult('auth-result', ` Signup failed: ${error.message}`, true);
             }
         }
 
         async function testLogin() {
             try {
                 if (!testUser) {
-                    showResult('auth-result', '❌ Please run signup test first', true);
+                    showResult('auth-result', ' Please run signup test first', true);
                     return;
                 }
                 const data = await apiCall('/auth/login', {
@@ -158,18 +158,18 @@
                         password: 'testpass123'
                     })
                 });
-                showResult('auth-result', `✅ Login successful!<br>Welcome back, ${data.user.name}`);
+                showResult('auth-result', ` Login successful!<br>Welcome back, ${data.user.name}`);
             } catch (error) {
-                showResult('auth-result', `❌ Login failed: ${error.message}`, true);
+                showResult('auth-result', ` Login failed: ${error.message}`, true);
             }
         }
 
         async function testGetProducts() {
             try {
                 const data = await apiCall('/card/all');
-                showResult('product-result', `✅ Retrieved ${data.length} products successfully!<br>Products: ${JSON.stringify(data, null, 2)}`);
+                showResult('product-result', ` Retrieved ${data.length} products successfully!<br>Products: ${JSON.stringify(data, null, 2)}`);
             } catch (error) {
-                showResult('product-result', `❌ Get products failed: ${error.message}`, true);
+                showResult('product-result', ` Get products failed: ${error.message}`, true);
             }
         }
 
@@ -185,16 +185,16 @@
                     })
                 });
                 testProduct = data.product;
-                showResult('product-result', `✅ Product added successfully!<br>Product ID: ${data.product._id}<br>Name: ${data.product.name}`);
+                showResult('product-result', ` Product added successfully!<br>Product ID: ${data.product._id}<br>Name: ${data.product.name}`);
             } catch (error) {
-                showResult('product-result', `❌ Add product failed: ${error.message}`, true);
+                showResult('product-result', ` Add product failed: ${error.message}`, true);
             }
         }
 
         async function testCart() {
             try {
                 if (!testUser || !testProduct) {
-                    showResult('cart-result', '❌ Please run signup and add product tests first', true);
+                    showResult('cart-result', ' Please run signup and add product tests first', true);
                     return;
                 }
                 
@@ -207,16 +207,16 @@
                     })
                 });
                 
-                showResult('cart-result', `✅ Cart operations successful!<br>Cart items: ${JSON.stringify(addData, null, 2)}`);
+                showResult('cart-result', `Cart operations successful!<br>Cart items: ${JSON.stringify(addData, null, 2)}`);
             } catch (error) {
-                showResult('cart-result', `❌ Cart operations failed: ${error.message}`, true);
+                showResult('cart-result', ` Cart operations failed: ${error.message}`, true);
             }
         }
 
         async function testFavorites() {
             try {
                 if (!testUser || !testProduct) {
-                    showResult('cart-result', '❌ Please run signup and add product tests first', true);
+                    showResult('cart-result', ' Please run signup and add product tests first', true);
                     return;
                 }
                 
@@ -229,16 +229,16 @@
                     })
                 });
                 
-                showResult('cart-result', `✅ Favorites operations successful!<br>Favorites: ${JSON.stringify(data, null, 2)}`);
+                showResult('cart-result', ` Favorites operations successful!<br>Favorites: ${JSON.stringify(data, null, 2)}`);
             } catch (error) {
-                showResult('cart-result', `❌ Favorites operations failed: ${error.message}`, true);
+                showResult('cart-result', ` Favorites operations failed: ${error.message}`, true);
             }
         }
 
         async function testRentSubmit() {
             try {
                 if (!testUser) {
-                    showResult('rent-result', '❌ Please run signup test first', true);
+                    showResult('rent-result', ' Please run signup test first', true);
                     return;
                 }
                 
@@ -254,18 +254,18 @@
                     })
                 });
                 
-                showResult('rent-result', `✅ Rent submission successful!<br>Rental ID: ${data.rentForm._id}<br>Name: ${data.rentForm.name}`);
+                showResult('rent-result', ` Rent submission successful!<br>Rental ID: ${data.rentForm._id}<br>Name: ${data.rentForm.name}`);
             } catch (error) {
-                showResult('rent-result', `❌ Rent submission failed: ${error.message}`, true);
+                showResult('rent-result', ` Rent submission failed: ${error.message}`, true);
             }
         }
 
         async function testGetRents() {
             try {
                 const data = await apiCall('/rent/all');
-                showResult('rent-result', `✅ Retrieved ${data.length} rentals successfully!<br>Rentals: ${JSON.stringify(data, null, 2)}`);
+                showResult('rent-result', ` Retrieved ${data.length} rentals successfully!<br>Rentals: ${JSON.stringify(data, null, 2)}`);
             } catch (error) {
-                showResult('rent-result', `❌ Get rentals failed: ${error.message}`, true);
+                showResult('rent-result', ` Get rentals failed: ${error.message}`, true);
             }
         }
     </script>
