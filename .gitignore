@@ -1,0 +1,38 @@
+# Dependencies (reinstall with npm install)
+node_modules/
+
+# Secrets and local config — never commit real values
+.env
+.env.local
+.env.*.local
+
+# Keep example env files for teammates
+!.env.example
+
+# Logs and debug output
+logs/
+*.log
+npm-debug.log*
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor / IDE (optional local settings)
+.idea/
+*.swp
+*.swo
+
+# Build / cache
+dist/
+build/
+.cache/
+coverage/
+.nyc_output/
+
+# Runtime / temp
+*.pid
+*.seed
+tmp/
+temp/
