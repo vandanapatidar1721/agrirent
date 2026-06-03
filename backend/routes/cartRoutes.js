@@ -11,5 +11,6 @@ router.post(
   allowRoles("renter"),
   cartController.removeFromCart
 );
+router.post("/clear", auth, allowRoles("renter"), cartController.clearCart);
 
 module.exports = router;

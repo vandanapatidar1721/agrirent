@@ -1,6 +1,5 @@
 const User = require("../models/User");
 const Product = require("../models/Product");
-const Equipment = require("../models/Equipment");
 
 const DEFAULT_IMAGE =
   "https://images.unsplash.com/photo-1592840496694-26d035b52b48?w=500&h=300&fit=crop";
@@ -8,7 +7,6 @@ const DEFAULT_IMAGE =
 async function submitRent(req, res) {
   try {
     const {
-      userId,
       name,
       price,
       description,
@@ -18,8 +16,8 @@ async function submitRent(req, res) {
       driverPrice,
     } = req.body;
 
-    const id = (req.user && req.user.id) || userId;
-    const user = await User.findById(id);
+    const userId = req.user.id;
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
@@ -37,26 +35,18 @@ async function submitRent(req, res) {
       location,
       hasDriver: normalizedHasDriver,
       driverPrice: normalizedDriverPrice,
-      owner: id,
+      owner: userId,
     });
     await newProduct.save();
 
-    const rentForm = new Equipment({
-      userId: id,
-      name,
-      price,
-      description,
-      imageUrl,
-      location,
-      hasDriver: normalizedHasDriver,
-      driverPrice: normalizedDriverPrice,
-    });
-    await rentForm.save();
+    const populated = await Product.findById(newProduct._id).populate(
+      "owner",
+      "name email role"
+    );
 
     res.status(201).json({
       message: "Equipment listed successfully!",
-      product: newProduct,
-      rentForm,
+      product: populated,
     });
   } catch (err) {
     console.error("Rent submission error:", err);
@@ -64,13 +54,4 @@ async function submitRent(req, res) {
   }
 }
 
-async function getAllRents(req, res) {
-  try {
-    const rents = await Equipment.find().populate("userId", "name email");
-    res.status(200).json(rents);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-}
-
-module.exports = { submitRent, getAllRents };
+module.exports = { submitRent };

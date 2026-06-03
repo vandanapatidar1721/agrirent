@@ -1,43 +1,22 @@
 const Product = require("../models/Product");
 
-async function addProduct(req, res) {
-  try {
-    const { name, price, description, image, userId } = req.body;
-
-    if (!name || !price) {
-      return res.status(400).json({ error: "Name and Price are required" });
-    }
-
-    const ownerId = (req.user && req.user.id) || userId || null;
-    const newProduct = new Product({
-      name,
-      price,
-      description,
-      image,
-      owner: ownerId,
-    });
-    await newProduct.save();
-
-    res
-      .status(201)
-      .json({ message: "Product added successfully", product: newProduct });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-}
-
 async function getAllProducts(req, res) {
   try {
-    const products = await Product.find().populate("owner", "name email");
+    const products = await Product.find()
+      .populate("owner", "name email role")
+      .sort({ createdAt: -1 });
     res.status(200).json(products);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 }
 
-async function getAllProductsSimple(req, res) {
+/** All products listed by the logged-in admin (uses owner foreign key). */
+async function getMyProducts(req, res) {
   try {
-    const products = await Product.find();
+    const products = await Product.find({ owner: req.user.id })
+      .populate("owner", "name email role")
+      .sort({ createdAt: -1 });
     res.status(200).json(products);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -77,9 +56,4 @@ async function deleteProduct(req, res) {
   }
 }
 
-module.exports = {
-  addProduct,
-  getAllProducts,
-  getAllProductsSimple,
-  deleteProduct,
-};
+module.exports = { getAllProducts, getMyProducts, deleteProduct };

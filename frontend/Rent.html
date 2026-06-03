@@ -3,51 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rent Your Equipment | AgriRent</title>
+  <title>My Listings | AgriRent</title>
   <link rel="stylesheet" href="style.css">
-  <script src="script.js" defer></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
+  <script src="js/config.js"></script>
+  <script src="js/cookies.js"></script>
+  <script src="js/image-utils.js"></script>
+  <script src="script.js" defer></script>
 </head>
 <body class="light-mode">
 
-  <!-- Header -->
   <header>
     <h2>🚜AgriRent</h2>
-
-    <!-- Desktop Navigation -->
     <div class="desktop-nav">
       <nav>
-        <a href="index.html">Home</a>
+        <a href="index.html">Browse Catalog</a>
         <a href="why.html">Why Us</a>
         <a href="about.html">About</a>
         <a href="contact.html">Contact</a>
-        <a href="Rent.html" class="active">Rent Out Equipment</a>
+        <a href="Rent.html" class="active">My Listings</a>
       </nav>
-      <!-- Theme Toggle -->
       <div class="theme-toggle" onclick="toggleTheme()">
         <i id="theme-icon" class="fas fa-sun"></i>
       </div>
     </div>
-
-    <!-- Auth Buttons (Login/Logout) -->
     <div class="auth-buttons"></div>
-
-    <!-- Hamburger Menu Button -->
     <button class="hamburger" aria-label="Toggle menu" onclick="toggleMenu()">
-      <span></span>
-      <span></span>
-      <span></span>
+      <span></span><span></span><span></span>
     </button>
-
-    <!-- Mobile Navigation Menu -->
     <nav class="mobile-nav" id="mobileNav">
-      <a href="index.html">Home</a>
+      <a href="index.html">Browse Catalog</a>
       <a href="why.html">Why Us</a>
       <a href="about.html">About</a>
       <a href="contact.html">Contact</a>
-        <a href="Rent.html" class="active">Rent Out Equipment</a>
-      
-      <!-- Mobile Theme Toggle -->
+      <a href="Rent.html" class="active">My Listings</a>
       <div class="mobile-theme-toggle">
         <div class="theme-toggle" onclick="toggleTheme()">
           <i id="mobile-theme-icon" class="fas fa-sun"></i>
@@ -57,42 +46,72 @@
     </nav>
   </header>
 
-  <!-- Rent Form Section -->
-  <section class="rent-section">
-    <h1>Rent Out Your Equipment</h1>
-    <p>List your farming equipment here so others can rent it easily.</p>
-    <form id="rentForm">
-      <input type="text" placeholder="Equipment Name" id="equipmentName" required />
-      <input type="number" placeholder="Price per day (₹)" id="equipmentPrice" required />
-      <input type="text" placeholder="Location" id="equipmentLocation" required />
-      
-      <label style="display:flex; gap:10px; align-items:center; justify-content:center; cursor:pointer;">
-        <input type="checkbox" id="equipmentHasDriver" />
-        <span>Add Driver</span>
-      </label>
-      <input
-        type="number"
-        placeholder="Driver Price per day (₹)"
-        id="driverPrice"
-        min="0"
-        step="1"
-        disabled
-      />
+  <main class="admin-dashboard">
+    <div class="admin-dashboard-header">
+      <div>
+        <h1>My Listings</h1>
+        <p>Equipment you have listed for rent. Renters see these on the home page.</p>
+      </div>
+      <button type="button" id="openAddProductBtn" class="btn-primary">
+        <i class="fas fa-plus"></i> Add Product
+      </button>
+    </div>
 
-      <input type="file" id="equipmentImage" accept="image/*" required />
-      <button type="submit">Submit</button>
-      
-    </form>
-    <p id="formMessage"></p>
-  </section>
+    <div class="card-container product-grid" id="equipment-list"></div>
+  </main>
 
-  <!-- Admin equipment list (for delete/manage) -->
-  <section class="section">
-    <h2 style="text-align:center; margin: 20px 0;">Your Listed Equipment</h2>
-    <div class="card-container" id="equipment-list"></div>
-  </section>
+  <!-- Add product dialog -->
+  <div id="addProductModal" class="modal" aria-hidden="true">
+    <div class="modal-content modal-product-form">
+      <button type="button" class="close modal-close-btn" id="closeAddProduct" aria-label="Close">&times;</button>
+      <h2><i class="fas fa-tractor"></i> Add Equipment</h2>
 
-  <!-- Footer -->
+      <form id="rentForm" class="product-form">
+        <div class="form-row">
+          <label>Equipment name</label>
+          <input type="text" placeholder="e.g. Tractor" id="equipmentName" required />
+        </div>
+        <div class="form-row two-col">
+          <div>
+            <label>Price per day (₹)</label>
+            <input type="number" placeholder="500" id="equipmentPrice" min="1" required />
+          </div>
+          <div>
+            <label>Location</label>
+            <input type="text" placeholder="City / State" id="equipmentLocation" required />
+          </div>
+        </div>
+        <div class="form-row driver-row">
+          <label class="checkbox-label">
+            <input type="checkbox" id="equipmentHasDriver" />
+            <span>Driver available</span>
+          </label>
+          <input
+            type="number"
+            placeholder="Driver price per day (₹)"
+            id="driverPrice"
+            min="0"
+            step="1"
+            disabled
+          />
+        </div>
+        <div class="form-row">
+          <label>Product image</label>
+          <input type="file" id="equipmentImage" accept="image/*" required />
+          <p class="form-hint">Image is cropped to a square (like Amazon) for a clean catalog.</p>
+        </div>
+        <div class="image-preview-box" id="imagePreviewBox" hidden>
+          <img id="imagePreview" alt="Preview" />
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" id="cancelAddProduct">Cancel</button>
+          <button type="submit" class="btn-primary">Publish listing</button>
+        </div>
+      </form>
+      <p id="formMessage" class="form-message"></p>
+    </div>
+  </div>
+
   <footer>
     <div class="footer-container">
       <div>
@@ -103,20 +122,15 @@
         <h4>Quick Links</h4>
         <ul>
           <li><a href="index.html">Home</a></li>
-          <li><a href="why.html">Why Us</a></li>
-          <li><a href="about.html">About</a></li>
-          <li><a href="contact.html">Contact</a></li>
-          <li><a href="Rent.html">Rent Out Equipment</a></li>
+          <li><a href="Rent.html">My Listings</a></li>
         </ul>
       </div>
       <div>
         <h4>Contact</h4>
         <p>Email: info@agrirent.com</p>
-        <p>Phone: +91 9876543210</p>
       </div>
     </div>
     <p class="copy">© 2025 AgriRent. All rights reserved.</p>
   </footer>
-
 </body>
 </html>

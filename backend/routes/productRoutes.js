@@ -4,8 +4,13 @@ const { auth, allowRoles } = require("../middleware/auth");
 
 const router = express.Router();
 
-router.post("/add", auth, allowRoles("admin"), productController.addProduct);
 router.get("/all", productController.getAllProducts);
+router.get(
+  "/mine",
+  auth,
+  allowRoles("admin"),
+  productController.getMyProducts
+);
 router.delete(
   "/:id",
   auth,

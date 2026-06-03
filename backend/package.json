@@ -6,6 +6,7 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "check-db": "node scripts/check-database.js",
+    "seed": "node -e \"require('dotenv').config(); require('./config/database')().then(() => require('./config/seed')()).then(() => process.exit(0)).catch(e => { console.error(e); process.exit(1); })\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

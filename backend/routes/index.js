@@ -1,5 +1,4 @@
 const express = require("express");
-const productController = require("../controllers/productController");
 
 const authRoutes = require("./authRoutes");
 const productRoutes = require("./productRoutes");
@@ -15,7 +14,6 @@ router.get("/", (req, res) => {
 
 router.use("/auth", authRoutes);
 router.use("/card", productRoutes);
-router.get("/product/all", productController.getAllProductsSimple);
 router.use("/cart", cartRoutes);
 router.use("/favorites", favoritesRoutes);
 router.use("/rent", rentRoutes);

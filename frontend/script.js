@@ -1,11 +1,9 @@
-// Global variables
 let currentUser = null;
 let equipments = [];
 let currentRenderedList = [];
 let rented = [];
 let favorites = [];
 
-// DOM elements
 const equipmentList = document.getElementById("equipment-list");
 const cartItems = document.getElementById("cart-items");
 const favItems = document.getElementById("fav-items");
@@ -13,368 +11,444 @@ const cartCount = document.getElementById("cart-count");
 const favCount = document.getElementById("fav-count");
 const totalBtn = document.getElementById("total-btn");
 
-// API Base URL
-const API_BASE_URL = "http://localhost:5000";
+const API_BASE_URL =
+  (window.APP_CONFIG && window.APP_CONFIG.API_BASE_URL) ||
+  "http://localhost:5000";
 
-// ---------- API Functions ----------
+const PLACEHOLDER_IMG =
+  "https://images.unsplash.com/photo-1592840496694-26d035b52b48?w=500&h=300&fit=crop";
+
+// ---------- API ----------
 async function apiCall(endpoint, options = {}) {
-  try {
-    const token = localStorage.getItem('token');
-    const authHeader = token ? { 'Authorization': `Bearer ${token}` } : {};
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...authHeader,
-        ...(options.headers || {})
-      },
-      ...options
-    });
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.error || 'API call failed');
-    }
-    return data;
-  } catch (error) {
-    console.error('API Error:', error);
-    throw error;
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...AuthCookies.getAuthHeaders(),
+      ...(options.headers || {}),
+    },
+    ...options,
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || "Request failed");
   }
+  return data;
 }
 
-// ---------- Authentication Functions ----------
+// ---------- Auth ----------
 async function signup(name, email, password, role = "renter") {
   try {
-    const data = await apiCall('/auth/signup', {
-      method: 'POST',
-      body: JSON.stringify({ name, email, password, role })
+    const data = await apiCall("/auth/signup", {
+      method: "POST",
+      body: JSON.stringify({ name, email, password, role }),
     });
-    currentUser = data.user;
-    localStorage.setItem('user', JSON.stringify(currentUser));
-    if (data.token) localStorage.setItem('token', data.token);
-    return { success: true, message: 'Signup successful!' };
+    return {
+      success: true,
+      message: data.message || "Account created. Please log in.",
+    };
   } catch (error) {
     return { success: false, message: error.message };
   }
 }
 
-async function login(email, password, role) {
+async function login(email, password) {
   try {
-    const data = await apiCall('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password, role })
+    const data = await apiCall("/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
     });
-    currentUser = data.user;
-    localStorage.setItem('user', JSON.stringify(currentUser));
-    if (data.token) localStorage.setItem('token', data.token);
-    return { success: true, message: 'Login successful!' };
+    if (data.token && data.user) {
+      AuthCookies.setAuthSession(data.user, data.token);
+      applyUserFromResponse(data.user);
+    }
+    return { success: true, message: "Login successful!" };
   } catch (error) {
     return { success: false, message: error.message };
   }
+}
+
+async function refreshSession() {
+  const data = await apiCall("/auth/me");
+  applyUserFromResponse(data.user);
+}
+
+function applyUserFromResponse(user) {
+  if (!user) return;
+  currentUser = user;
+  AuthCookies.setAuthUser(user);
+  syncCartAndFavoritesFromUser(user);
 }
 
 function logout() {
-  const wasAdmin = currentUser?.role === 'admin';
   currentUser = null;
-  localStorage.removeItem('user');
-  localStorage.removeItem('token');
   rented = [];
   favorites = [];
+  AuthCookies.clearAuthSession();
+
   updateCart();
   updateFav();
   updateAuthUI();
+  updateNavForRole();
 
-  if (wasAdmin && window.location.pathname.split('/').pop() === 'Rent.html') {
-    window.location.href = 'index.html';
+  const page = getCurrentPage();
+  if (page !== "index.html" && page !== "") {
+    window.location.href = "index.html";
+    return;
+  }
+
+  loadEquipments();
+}
+
+// ---------- Map DB product → UI card ----------
+function mapProductToItem(product, driverSelected = false) {
+  const priceNum = product.price;
+  let img = product.image || PLACEHOLDER_IMG;
+  if (img.startsWith("data:") || img.startsWith("http")) {
+    // base64 or remote URL — use as-is
+  } else {
+    // local file in frontend folder (e.g. tractor.jpg)
+    img = img.replace(/^\//, "");
+  }
+
+  return {
+    id: product._id,
+    name: product.name,
+    price: `₹${priceNum}/day`,
+    priceNum,
+    img,
+    location: product.location || "India",
+    userId: product.owner?._id || product.owner || null,
+    ownerId: product.owner?._id || product.owner || null,
+    ownerName: product.owner?.name || null,
+    ownerEmail: product.owner?.email || null,
+    hasDriver: Boolean(product.hasDriver),
+    driverPrice: product.driverPrice || 0,
+    driverSelected: Boolean(driverSelected),
+  };
+}
+
+function syncCartAndFavoritesFromUser(user) {
+  rented = (user.cart || [])
+    .map((entry) => {
+      const product = entry.product;
+      if (!product || !product._id) return null;
+      return mapProductToItem(product, entry.driverSelected);
+    })
+    .filter(Boolean);
+
+  favorites = (user.favorites || [])
+    .map((product) => {
+      if (!product || !product._id) return null;
+      return mapProductToItem(product);
+    })
+    .filter(Boolean);
+
+  updateCart();
+  updateFav();
+  if (equipments.length) {
+    renderEquipments(equipments);
   }
 }
 
-// ---------- Equipment Functions ----------
-async function loadEquipments() {
-  try {
-    console.log('Loading equipments from API...');
-    // Load from both hardcoded data and API
-    const apiProducts = await apiCall('/card/all');
-    console.log('API Products received:', apiProducts);
+function isFavorite(productId) {
+  return favorites.some((f) => String(f.id) === String(productId));
+}
 
-    // Convert API products to match frontend format
-    const apiEquipments = apiProducts.map(product => ({
-      name: product.name,
-      price: `₹${product.price}/day`,
-      img: product.image || 'tractor.jpg', // default image
-      location: product.location || 'Available Location', // fallback location
-      id: product._id,
-      ownerId: product.owner?._id || product.owner || null,
-      hasDriver: Boolean(product.hasDriver),
-      driverPrice: product.driverPrice || 0
-    }));
-    
-    // Hardcoded equipment data
-    const hardcodedEquipments = [
-      {name: "Tractor", price: "₹500/day", img: "tractor.jpg", location: "Delhi"},
-      {name: "Drone", price: "₹1000/day", img: "Drone.jpg", location: "Mumbai"},
-      {name: "Harvester", price: "₹2000/day", img: "Harvester.jpg", location: "Delhi"},
-      {name: "Rotavator", price: "₹300/day", img: "Rotavator.jpg", location: "Delhi"},
-      {name: "Seeder", price: "₹400/day", img: "seeder.jpg", location: "Mumbai"},
-      {name: "Plough", price: "₹350/day", img: "plough.jpg", location: "Delhi"},
-      {name: "Sprayer", price: "₹250/day", img: "sparayer.jpg", location: "Mumbai"},
-      {name: "Baler", price: "₹1500/day", img: "baler.jpg", location: "Delhi"},
-      {name: "Cultivator", price: "₹450/day", img: "cultivator.jpg", location: "Delhi"},
-      {name: "Weeder", price: "₹200/day", img: "weeder.jpg", location: "Mumbai"},
-      {name: "Water Pump", price: "₹300/day", img: "waterpump.jpg", location: "Delhi"},
-      {name: "Thresher", price: "₹1200/day", img: "theresher.jpg", location: "Mumbai"},
-      {name: "Trolley", price: "₹600/day", img: "trolley.jpg", location: "Delhi"},
-      {name: "Power Tiller", price: "₹800/day", img: "tiller.jpg", location: "Delhi"},
-      {name: "Reaper", price: "₹900/day", img: "reaper.jpg", location: "Mumbai"}
-    ];
-    
-    // Combine API products with hardcoded data
-    equipments = [...hardcodedEquipments, ...apiEquipments];
-    console.log('Total equipments:', equipments.length);
+// ---------- Equipment ----------
+async function loadEquipments() {
+  if (!equipmentList) return;
+
+  try {
+    const endpoint = isAdminListingsPage() ? "/card/mine" : "/card/all";
+    const apiProducts = await apiCall(endpoint);
+    equipments = apiProducts.map((p) => mapProductToItem(p));
     renderEquipments(equipments);
   } catch (error) {
-    console.error('Failed to load equipments from API, using hardcoded data:', error);
-    // Fallback to hardcoded data only
-    const hardcodedEquipments = [
-      {name: "Tractor", price: "₹500/day", img: "tractor.jpg", location: "Delhi"},
-      {name: "Drone", price: "₹1000/day", img: "Drone.jpg", location: "Mumbai"},
-      {name: "Harvester", price: "₹2000/day", img: "Harvester.jpg", location: "Delhi"},
-      {name: "Rotavator", price: "₹300/day", img: "Rotavator.jpg", location: "Delhi"},
-      {name: "Seeder", price: "₹400/day", img: "seeder.jpg", location: "Mumbai"},
-      {name: "Plough", price: "₹350/day", img: "plough.jpg", location: "Delhi"},
-      {name: "Sprayer", price: "₹250/day", img: "sparayer.jpg", location: "Mumbai"},
-      {name: "Baler", price: "₹1500/day", img: "baler.jpg", location: "Delhi"},
-      {name: "Cultivator", price: "₹450/day", img: "cultivator.jpg", location: "Delhi"},
-      {name: "Weeder", price: "₹200/day", img: "weeder.jpg", location: "Mumbai"},
-      {name: "Water Pump", price: "₹300/day", img: "waterpump.jpg", location: "Delhi"},
-      {name: "Thresher", price: "₹1200/day", img: "theresher.jpg", location: "Mumbai"},
-      {name: "Trolley", price: "₹600/day", img: "trolley.jpg", location: "Delhi"},
-      {name: "Power Tiller", price: "₹800/day", img: "tiller.jpg", location: "Delhi"},
-      {name: "Reaper", price: "₹900/day", img: "reaper.jpg", location: "Mumbai"}
-    ];
-    equipments = hardcodedEquipments;
-    renderEquipments(equipments);
+    console.error("Failed to load equipments:", error);
+    equipments = [];
+    equipmentList.innerHTML =
+      '<p class="empty-msg">Could not load equipment. Is the backend running on port 5000?</p>';
   }
 }
 
-// ---------- Cart Functions ----------
+// ---------- Cart (MongoDB via API) ----------
 async function addToCart(index, withDriver = false) {
   if (!currentUser) {
-    alert('Please login to add items to cart');
+    alert("Please login to rent equipment");
+    document.getElementById("loginForm")?.style.setProperty("display", "flex");
+    return;
+  }
+  if (currentUser.role !== "renter") {
+    alert("Only renters can add items to cart.");
     return;
   }
 
   const item = currentRenderedList[index];
-  if (!item) return;
-
-  if (currentUser.role !== 'renter') {
-    alert('Only users can rent equipment.');
+  if (!item?.id) {
+    alert("This listing is not available for online booking yet.");
     return;
   }
 
-  const willHaveDriver = Boolean(item.hasDriver) && Boolean(withDriver);
-  rented.push({ ...item, driverSelected: willHaveDriver });
-  updateCart();
-  
-  // If item has an ID (from API), save to backend
-  if (item.id) {
-    try {
-      await apiCall('/cart/add', {
-        method: 'POST',
-        body: JSON.stringify({
-          userId: currentUser._id,
-          productId: item.id
-        })
-      });
-    } catch (error) {
-      console.error('Failed to save cart to backend:', error);
-    }
+  try {
+    const data = await apiCall("/cart/add", {
+      method: "POST",
+      body: JSON.stringify({
+        productId: item.id,
+        driverSelected: Boolean(item.hasDriver && withDriver),
+      }),
+    });
+    applyUserFromResponse(data.user);
+  } catch (error) {
+    alert(error.message || "Failed to add to cart");
   }
 }
 
 async function removeFromCart(index) {
   const item = rented[index];
-  rented.splice(index, 1);
-  updateCart();
-  
-  // If item has an ID (from API), remove from backend
-  if (item.id && currentUser) {
-    try {
-      await apiCall('/cart/remove', {
-        method: 'POST',
-        body: JSON.stringify({
-          userId: currentUser._id,
-          productId: item.id
-        })
-      });
-    } catch (error) {
-      console.error('Failed to remove from backend cart:', error);
-    }
+  if (!item?.id || !currentUser) return;
+
+  try {
+    const data = await apiCall("/cart/remove", {
+      method: "POST",
+      body: JSON.stringify({ productId: item.id }),
+    });
+    applyUserFromResponse(data.user);
+  } catch (error) {
+    alert(error.message || "Failed to remove from cart");
   }
 }
 
-// ---------- Favorites Functions ----------
+// ---------- Favorites (MongoDB via API) ----------
 async function addToFav(index) {
   if (!currentUser) {
-    alert('Please login to add favorites');
+    alert("Please login to save favorites");
+    document.getElementById("loginForm")?.style.setProperty("display", "flex");
     return;
   }
-
-  if (currentUser.role !== 'renter') {
-    alert('Only users can add favorites.');
+  if (currentUser.role !== "renter") {
+    alert("Only renters can use favorites.");
     return;
   }
 
   const item = currentRenderedList[index];
-  if (!item) return;
+  if (!item?.id) return;
 
-  favorites.push(item);
-  updateFav();
-  
-  // If item has an ID (from API), save to backend
-  if (item.id) {
-    try {
-      await apiCall('/favorites/toggle', {
-        method: 'POST',
-        body: JSON.stringify({
-          userId: currentUser._id,
-          productId: item.id
-        })
-      });
-    } catch (error) {
-      console.error('Failed to save favorite to backend:', error);
-    }
+  try {
+    const data = await apiCall("/favorites/toggle", {
+      method: "POST",
+      body: JSON.stringify({ productId: item.id }),
+    });
+    applyUserFromResponse(data.user);
+  } catch (error) {
+    alert(error.message || "Failed to update favorites");
   }
 }
 
 async function removeFromFav(index) {
   const item = favorites[index];
-  favorites.splice(index, 1);
-  updateFav();
-  
-  // If item has an ID (from API), remove from backend
-  if (item.id && currentUser) {
-    try {
-      await apiCall('/favorites/toggle', {
-        method: 'POST',
-        body: JSON.stringify({
-          userId: currentUser._id,
-          productId: item.id
-        })
-      });
-    } catch (error) {
-      console.error('Failed to remove from backend favorites:', error);
-    }
+  if (!item?.id || !currentUser) return;
+
+  try {
+    const data = await apiCall("/favorites/toggle", {
+      method: "POST",
+      body: JSON.stringify({ productId: item.id }),
+    });
+    applyUserFromResponse(data.user);
+  } catch (error) {
+    alert(error.message || "Failed to update favorites");
   }
 }
 
-// ---------- Render Functions ----------
+function getCurrentPage() {
+  return window.location.pathname.split("/").pop();
+}
+
+function isAdminListingsPage() {
+  return getCurrentPage() === "Rent.html" && currentUser?.role === "admin";
+}
+
+function buildProductCardHtml(item, index, options = {}) {
+  const { isAdmin = false, showRentActions = true } = options;
+  const canDelete =
+    isAdmin &&
+    item.id &&
+    item.ownerId &&
+    currentUser &&
+    String(currentUser._id) === String(item.ownerId);
+
+  let rentBtns = "";
+  if (showRentActions && !isAdmin && item.id) {
+    rentBtns = `<button type="button" class="btn-card" onclick="addToCart(${index}, false)">Rent Now</button>`;
+    if (item.hasDriver) {
+      rentBtns += `<button type="button" class="btn-card btn-outline" onclick="addToCart(${index}, true)">+ Driver (₹${item.driverPrice}/day)</button>`;
+    }
+  }
+
+  const favActive = isFavorite(item.id);
+  const favBtn =
+    showRentActions && !isAdmin && item.id
+      ? `<button type="button" class="btn-card fav-btn${favActive ? " active" : ""}" onclick="addToFav(${index})">${favActive ? "♥ Saved" : "♡ Save"}</button>`
+      : "";
+
+  const driverLine = item.hasDriver
+    ? `<p class="card-meta"><i class="fas fa-user"></i> Driver ₹${item.driverPrice}/day</p>`
+    : `<p class="card-meta muted">No driver</p>`;
+
+  const listedByLine = item.ownerName
+    ? `<p class="card-meta listed-by"><i class="fas fa-user-tie"></i> Listed by ${item.ownerName}</p>`
+    : `<p class="card-meta muted">Demo listing (no owner)</p>`;
+
+  const deleteBtn = canDelete
+    ? `<button type="button" class="btn-card danger-btn" onclick="deleteProduct('${item.id}')"><i class="fas fa-trash"></i> Delete</button>`
+    : "";
+
+  return `
+    <div class="card-img-wrap">
+      <img src="${item.img}" alt="${item.name}" loading="lazy" decoding="async"
+        onerror="this.onerror=null;this.src='${PLACEHOLDER_IMG}'">
+    </div>
+    <div class="card-body">
+      <h3 class="card-title">${item.name}</h3>
+      <p class="card-price">${item.price}</p>
+      <p class="card-meta"><i class="fas fa-location-dot"></i> ${item.location}</p>
+      ${driverLine}
+      ${listedByLine}
+      <div class="card-actions">${rentBtns}${favBtn}${deleteBtn}</div>
+    </div>
+  `;
+}
+
+// ---------- Render ----------
 function renderEquipments(list) {
   if (!equipmentList) return;
 
-  const page = window.location.pathname.split('/').pop();
-  const isAdmin = currentUser?.role === 'admin';
-  // On Rent.html, show only admin-owned listings so delete/manage is clear.
-  if (isAdmin && page === 'Rent.html' && currentUser?._id) {
-    const adminId = String(currentUser._id);
-    list = list.filter(item => item.ownerId && String(item.ownerId) === adminId);
-  }
-  
+  const page = getCurrentPage();
+  const isAdmin = currentUser?.role === "admin";
+  const onAdminPage = isAdmin && page === "Rent.html";
+
   currentRenderedList = list;
+  equipmentList.classList.toggle("product-grid", true);
+
+  if (!list.length) {
+    if (onAdminPage) {
+      equipmentList.innerHTML = `
+        <div class="admin-empty-state">
+          <i class="fas fa-box-open" aria-hidden="true"></i>
+          <h3>No products yet</h3>
+          <p>You have not listed any equipment. Add your first product to show it on the home page.</p>
+          <button type="button" class="btn-primary" onclick="openAddProductModal()">
+            <i class="fas fa-plus"></i> Add Product
+          </button>
+        </div>`;
+      return;
+    }
+
+    equipmentList.innerHTML = `<p class="empty-msg">No equipment in the catalog yet.
+      <br>Check back soon or contact an admin to add listings.</p>`;
+    return;
+  }
+
   equipmentList.innerHTML = "";
   list.forEach((item, index) => {
-    const card = document.createElement("div");
-    card.classList.add("card");
-    card.dataset.location = item.location.toLowerCase();
-    // Admin can only delete products they own
-    const canDelete = isAdmin && item.id && item.ownerId && String(currentUser?._id) === String(item.ownerId);
-    const deleteBtn = canDelete ? `<button onclick="deleteProduct('${item.id}')">Delete</button>` : '';
-    let rentBtns = '';
-    if (!isAdmin) {
-      // Always allow equipment-only rental
-      rentBtns = `<button onclick="addToCart(${index}, false)">Rent Now</button>`;
-      // If driver is available, allow extra driver rental
-      if (item.hasDriver) {
-        rentBtns += `<button onclick="addToCart(${index}, true)">Rent with Driver (+₹${item.driverPrice}/day)</button>`;
-      }
-    }
-    const favBtn = !isAdmin ? `<button onclick="addToFav(${index})">❤️ Fav</button>` : '';
-    const driverLine = item.hasDriver
-      ? `<p><strong>Driver:</strong> Available (₹${item.driverPrice}/day)</p>`
-      : `<p><strong>Driver:</strong> Not available</p>`;
-    card.innerHTML = `
-      <img src="${item.img}" alt="${item.name}">
-      <h3>${item.name}</h3>
-      <p>${item.price}</p>
-      <p><strong>Location:</strong> ${item.location}</p>
-      ${driverLine}
-      ${rentBtns}
-      ${favBtn}
-      ${deleteBtn}
-    `;
+    const card = document.createElement("article");
+    card.classList.add("card", "product-card");
+    card.dataset.location = (item.location || "").toLowerCase();
+    card.innerHTML = buildProductCardHtml(item, index, {
+      isAdmin: onAdminPage,
+      showRentActions: !onAdminPage,
+    });
     equipmentList.appendChild(card);
   });
 }
 
+function setBadgeCount(el, mobileEl, count) {
+  if (el) el.innerText = count;
+  if (mobileEl) mobileEl.innerText = count;
+}
+
 function updateCart() {
   if (!cartItems) return;
-  
+
   cartItems.innerHTML = "";
   let total = 0;
+
   rented.forEach((item, index) => {
-    const equipmentPrice = parseInt(item.price.replace(/[^\d]/g, "")) || 0;
-    const driverExtra = item.driverSelected ? (parseInt(item.driverPrice) || 0) : 0;
+    const equipmentPrice = item.priceNum || parseInt(item.price.replace(/[^\d]/g, ""), 10) || 0;
+    const driverExtra = item.driverSelected ? item.driverPrice || 0 : 0;
     total += equipmentPrice + driverExtra;
+
     const li = document.createElement("li");
-    const driverText = driverExtra > 0 ? ` + Driver ₹${driverExtra}/day` : '';
+    const driverText =
+      driverExtra > 0 ? ` + Driver ₹${driverExtra}/day` : "";
     li.innerHTML = `
-      <img src="${item.img}" class="sidebar-img">
-      <span>${item.name} - ${item.price}${driverText}</span>
-      <button title="Remove" onclick="removeFromCart(${index})">&times;</button>
+      <span class="sidebar-thumb"><img src="${item.img}" class="sidebar-img" alt=""></span>
+      <span>${item.name} — ${item.price}${driverText}</span>
+      <button type="button" title="Remove" onclick="removeFromCart(${index})">&times;</button>
     `;
     cartItems.appendChild(li);
   });
-  
-  if (cartCount) cartCount.innerText = rented.length;
+
+  setBadgeCount(cartCount, document.getElementById("mobile-cart-count"), rented.length);
   if (totalBtn) totalBtn.innerText = "Total: ₹" + total;
 }
 
 function updateFav() {
   if (!favItems) return;
-  
+
   favItems.innerHTML = "";
   favorites.forEach((item, index) => {
     const li = document.createElement("li");
     li.innerHTML = `
-      <img src="${item.img}" class="sidebar-img">
-      <span>${item.name} - ${item.price}</span>
-      <button title="Remove" onclick="removeFromFav(${index})">&times;</button>
+      <span class="sidebar-thumb"><img src="${item.img}" class="sidebar-img" alt=""></span>
+      <span>${item.name} — ${item.price}</span>
+      <button type="button" title="Remove" onclick="removeFromFav(${index})">&times;</button>
     `;
     favItems.appendChild(li);
   });
-  
-  if (favCount) favCount.innerText = favorites.length;
+
+  setBadgeCount(favCount, document.getElementById("mobile-fav-count"), favorites.length);
+}
+
+function updateNavForRole() {
+  const isAdmin = currentUser?.role === "admin";
+  const isRenter = currentUser?.role === "renter";
+
+  document.querySelectorAll(".nav-rent-link").forEach((el) => {
+    el.style.display = !currentUser || isAdmin ? "" : "none";
+  });
+
+  document.querySelectorAll(".renter-only").forEach((el) => {
+    el.style.display = isRenter ? "" : "none";
+  });
 }
 
 function updateAuthUI() {
-  const authButtonContainers = document.querySelectorAll('.auth-buttons');
-  if (!authButtonContainers || authButtonContainers.length === 0) return;
+  const authButtonContainers = document.querySelectorAll(".auth-buttons");
+  if (!authButtonContainers.length) return;
 
-  const loginModal = document.getElementById('loginForm');
-  const signupModal = document.getElementById('signupForm');
+  const loginModal = document.getElementById("loginForm");
+  const signupModal = document.getElementById("signupForm");
 
   authButtonContainers.forEach((container) => {
-    const isMobile = !!container.closest('.mobile-icons');
+    const isMobile = !!container.closest(".mobile-icons");
 
     if (currentUser) {
+      const roleLabel =
+        currentUser.role === "admin"
+          ? "Admin"
+          : currentUser.role === "farmer"
+            ? "Farmer"
+            : "Renter";
       container.innerHTML = `
-        <span>Welcome, ${currentUser.name}</span>
-        <button onclick="logout()">Logout</button>
+        <span class="user-greeting">Hi, ${currentUser.name} <small>(${roleLabel})</small></span>
+        <button type="button" onclick="logout()">Logout</button>
       `;
       return;
     }
 
-    // If the page doesn't contain auth modals, don't show login/signup (user can log in from index.html)
     if (!loginModal || !signupModal) {
-      container.innerHTML = "";
+      container.innerHTML = `<a href="index.html#login">Login</a>`;
       return;
     }
 
@@ -382,8 +456,8 @@ function updateAuthUI() {
     const signupId = isMobile ? "mobile-signupBtn" : "signupBtn";
 
     container.innerHTML = `
-      <button id="${loginId}">Login</button>
-      <button id="${signupId}">Sign Up</button>
+      <button type="button" id="${loginId}">Login</button>
+      <button type="button" id="${signupId}">Sign Up</button>
     `;
 
     container.querySelector(`#${loginId}`)?.addEventListener("click", () => {
@@ -393,18 +467,16 @@ function updateAuthUI() {
       signupModal.style.display = "flex";
     });
   });
+
+  updateNavForRole();
 }
 
-// ---------- Toggle Functions ----------
 function toggleCart() {
   const cartSidebar = document.getElementById("cart-sidebar");
   const favSidebar = document.getElementById("fav-sidebar");
   if (!cartSidebar) return;
-
   const willOpen = !cartSidebar.classList.contains("active");
   cartSidebar.classList.toggle("active");
-
-  // Prevent both side panels from stacking on top of each other
   if (willOpen && favSidebar) favSidebar.classList.remove("active");
 }
 
@@ -412,336 +484,346 @@ function toggleFav() {
   const favSidebar = document.getElementById("fav-sidebar");
   const cartSidebar = document.getElementById("cart-sidebar");
   if (!favSidebar) return;
-
   const willOpen = !favSidebar.classList.contains("active");
   favSidebar.classList.toggle("active");
-
-  // Prevent both side panels from stacking on top of each other
   if (willOpen && cartSidebar) cartSidebar.classList.remove("active");
 }
 
-// ---------- Responsive Navbar ----------
 function toggleMenu() {
-  const mobileNav = document.getElementById('mobileNav');
-  const hamburger = document.querySelector('.hamburger');
-  
-  if (mobileNav) {
-    mobileNav.classList.toggle('show');
-  }
-  
-  // Toggle hamburger animation
-  if (hamburger) {
-    hamburger.classList.toggle('active');
-  }
-  
-  // Prevent body scroll when menu is open
-  document.body.classList.toggle('menu-open');
+  const mobileNav = document.getElementById("mobileNav");
+  const hamburger = document.querySelector(".hamburger");
+  mobileNav?.classList.toggle("show");
+  hamburger?.classList.toggle("active");
+  document.body.classList.toggle("menu-open");
 }
 
-// ---------- Payment Function ----------
-function payNow() {
-  if (rented.length === 0) {
-    alert("No items in cart!");
+async function payNow() {
+  if (!rented.length) {
+    alert("Your cart is empty.");
     return;
   }
-  alert("Payment successful for " + rented.length + " items!");
-  rented = [];
-  updateCart();
-  toggleCart();
+  if (!currentUser) {
+    alert("Please login first.");
+    return;
+  }
+
+  try {
+    const data = await apiCall("/cart/clear", { method: "POST" });
+    applyUserFromResponse(data.user);
+    toggleCart();
+    alert("Booking confirmed! Thank you for using AgriRent.");
+  } catch (error) {
+    alert(error.message || "Payment failed");
+  }
 }
 
-// ---------- Search Function ----------
 function searchItem() {
   const input = document.querySelector(".search-bar input")?.value.toLowerCase().trim();
   if (!input) {
     renderEquipments(equipments);
     return;
   }
-  
-  const filtered = equipments.filter(item => 
-    item.name.toLowerCase().includes(input) || 
-    item.location.toLowerCase().includes(input)
+  const filtered = equipments.filter(
+    (item) =>
+      item.name.toLowerCase().includes(input) ||
+      (item.location || "").toLowerCase().includes(input)
   );
   renderEquipments(filtered);
 }
 
-// ---------- Theme Toggle ----------
 function toggleTheme() {
   const body = document.body;
   const themeIcon = document.getElementById("theme-icon");
   if (body.classList.contains("dark-mode")) {
     body.classList.remove("dark-mode");
     body.classList.add("light-mode");
-    themeIcon.classList.remove("fa-moon");
-    themeIcon.classList.add("fa-sun");
+    themeIcon?.classList.replace("fa-moon", "fa-sun");
   } else {
     body.classList.remove("light-mode");
     body.classList.add("dark-mode");
-    themeIcon.classList.remove("fa-sun");
-    themeIcon.classList.add("fa-moon");
+    themeIcon?.classList.replace("fa-sun", "fa-moon");
   }
 }
 
-// ---------- Initialize App ----------
-function initApp() {
-  // Load user from localStorage
-  const savedUser = localStorage.getItem('user');
-  if (savedUser) {
-    currentUser = JSON.parse(savedUser);
+async function initApp() {
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+
+  const token = AuthCookies.getAuthToken();
+  if (token) {
+    try {
+      await refreshSession();
+    } catch {
+      AuthCookies.clearAuthSession();
+      currentUser = null;
+    }
   }
 
-  // Role-based routing:
-  // - Admin must manage listings from Rent.html
-  // - Non-admin users should never access Rent.html
-  const page = window.location.pathname.split('/').pop();
-  if (page === 'Rent.html') {
-    if (!currentUser || currentUser.role !== 'admin') {
-      alert('Only admin can access Rent Out Your Equipment.');
-      window.location.href = 'index.html';
-      return;
-    }
-  } else {
-    if (currentUser?.role === 'admin') {
-      window.location.href = 'Rent.html';
+  const page = window.location.pathname.split("/").pop();
+
+  if (page === "Rent.html") {
+    if (!currentUser || currentUser.role !== "admin") {
+      alert("Only admins can list equipment here. Please log in as admin.");
+      window.location.href = "index.html";
       return;
     }
   }
-  
-  // Load equipments
-  loadEquipments();
-  
-  // Update UI
+
+  await loadEquipments();
   updateAuthUI();
-  updateCart();
-  updateFav();
-  
-  // Set initial theme
-  document.body.classList.add("light-mode");
 }
 
-// ---------- Login / Signup Modal Functions ----------
 function setupAuthModals() {
-  const loginBtn = document.getElementById('loginBtn');
-  const signupBtn = document.getElementById('signupBtn');
-  const loginForm = document.getElementById('loginForm');
-  const signupForm = document.getElementById('signupForm');
-  const closeLogin = document.getElementById('closeLogin');
-  const closeSignup = document.getElementById('closeSignup');
+  const loginForm = document.getElementById("loginForm");
+  const signupForm = document.getElementById("signupForm");
+  if (!loginForm || !signupForm) return;
 
-  if (loginBtn) loginBtn.addEventListener('click', () => loginForm.style.display = 'flex');
-  if (signupBtn) signupBtn.addEventListener('click', () => signupForm.style.display = 'flex');
-  if (closeLogin) closeLogin.addEventListener('click', () => loginForm.style.display = 'none');
-  if (closeSignup) closeSignup.addEventListener('click', () => signupForm.style.display = 'none');
-  
-  window.addEventListener('click', (e) => {
-    if (e.target === loginForm) loginForm.style.display = 'none';
-    if (e.target === signupForm) signupForm.style.display = 'none';
+  document.getElementById("loginBtn")?.addEventListener("click", () => {
+    loginForm.style.display = "flex";
+  });
+  document.getElementById("signupBtn")?.addEventListener("click", () => {
+    signupForm.style.display = "flex";
+  });
+  document.getElementById("closeLogin")?.addEventListener("click", () => {
+    loginForm.style.display = "none";
+  });
+  document.getElementById("closeSignup")?.addEventListener("click", () => {
+    signupForm.style.display = "none";
   });
 
-  // Login form submission
-  const loginSubmitBtn = loginForm?.querySelector('button');
-  if (loginSubmitBtn) {
-    loginSubmitBtn.addEventListener('click', async (e) => {
-      e.preventDefault();
-      const email = loginForm.querySelector('input[type="text"]').value.trim();
-      const role = loginForm.querySelector('#loginRole')?.value || "renter";
-      const password = loginForm.querySelector('input[type="password"]').value.trim();
-      
-      if (!email || !password) {
-        alert('Please fill all fields');
-        return;
-      }
-      
-      const result = await login(email, password, role);
-      alert(result.message);
-      
-      if (result.success) {
-        loginForm.style.display = 'none';
-        updateAuthUI();
-        if (currentUser?.role === 'admin') {
-          window.location.href = 'Rent.html';
-        }
-      }
-    });
+  window.addEventListener("click", (e) => {
+    if (e.target === loginForm) loginForm.style.display = "none";
+    if (e.target === signupForm) signupForm.style.display = "none";
+  });
+
+  if (window.location.hash === "#login") {
+    loginForm.style.display = "flex";
   }
 
-  // Signup form submission
-  const signupSubmitBtn = signupForm?.querySelector('button');
-  if (signupSubmitBtn) {
-    signupSubmitBtn.addEventListener('click', async (e) => {
-      e.preventDefault();
-      const name = signupForm.querySelector('input[type="text"]').value.trim();
-      const email = signupForm.querySelector('input[type="email"]').value.trim();
-      const role = signupForm.querySelector('#signupRole')?.value || "renter";
-      const password = signupForm.querySelector('input[type="password"]').value.trim();
-      
-      if (!name || !email || !password) {
-        alert('Please fill all fields');
-        return;
+  loginForm.querySelector("button")?.addEventListener("click", async (e) => {
+    e.preventDefault();
+    const email = loginForm.querySelector('input[type="email"]')?.value.trim();
+    const password = loginForm.querySelector('input[type="password"]')?.value.trim();
+
+    if (!email || !password) {
+      alert("Please fill all fields");
+      return;
+    }
+
+    const result = await login(email, password);
+    alert(result.message);
+
+    if (result.success) {
+      loginForm.style.display = "none";
+      updateAuthUI();
+      if (currentUser?.role === "admin") {
+        window.location.href = "Rent.html";
+      } else {
+        await loadEquipments();
       }
-      
-      if (password.length < 6) {
-        alert('Password must be at least 6 characters');
-        return;
-      }
-      
-      const emailPattern = /^[^ ]+@[^ ]+\.[a-z]{2,3}$/;
-      if (!emailPattern.test(email)) {
-        alert('Please enter a valid email');
-        return;
-      }
-      
-      const result = await signup(name, email, password, role);
-      alert(result.message);
-      
-      if (result.success) {
-        signupForm.style.display = 'none';
-        updateAuthUI();
-        if (currentUser?.role === 'admin') {
-          window.location.href = 'Rent.html';
-        }
-      }
-    });
-  }
+    }
+  });
+
+  signupForm.querySelector("button")?.addEventListener("click", async (e) => {
+    e.preventDefault();
+    const name = signupForm.querySelector('input[name="name"]')?.value.trim();
+    const email = signupForm.querySelector('input[type="email"]')?.value.trim();
+    const role = signupForm.querySelector("#signupRole")?.value || "renter";
+    const password = signupForm.querySelector('input[type="password"]')?.value.trim();
+
+    if (!name || !email || !password) {
+      alert("Please fill all fields");
+      return;
+    }
+    if (password.length < 6) {
+      alert("Password must be at least 6 characters");
+      return;
+    }
+
+    const result = await signup(name, email, password, role);
+    alert(result.message);
+
+    if (result.success) {
+      signupForm.style.display = "none";
+      signupForm.reset();
+      loginForm.style.display = "flex";
+    }
+  });
 }
 
-// ---------- Rent Form Integration ----------
+function openAddProductModal() {
+  const modal = document.getElementById("addProductModal");
+  if (!modal) return;
+  modal.style.display = "flex";
+  modal.setAttribute("aria-hidden", "false");
+  document.getElementById("formMessage").textContent = "";
+}
+
+function closeAddProductModal() {
+  const modal = document.getElementById("addProductModal");
+  if (!modal) return;
+  modal.style.display = "none";
+  modal.setAttribute("aria-hidden", "true");
+}
+
+function resetProductForm() {
+  const rentForm = document.getElementById("rentForm");
+  const previewBox = document.getElementById("imagePreviewBox");
+  const previewImg = document.getElementById("imagePreview");
+  const driverPriceInput = document.getElementById("driverPrice");
+  rentForm?.reset();
+  if (driverPriceInput) driverPriceInput.disabled = true;
+  if (previewBox) previewBox.hidden = true;
+  if (previewImg) previewImg.removeAttribute("src");
+}
+
 function setupRentForm() {
   const rentForm = document.getElementById("rentForm");
   const formMessage = document.getElementById("formMessage");
+  if (!rentForm) return;
 
-  if (rentForm) {
-    // Driver fields: enable/disable driver price based on checkbox
-    const driverToggle = document.getElementById("equipmentHasDriver");
-    const driverPriceInput = document.getElementById("driverPrice");
-    if (driverToggle && driverPriceInput) {
-      driverPriceInput.disabled = !driverToggle.checked;
-      driverToggle.addEventListener("change", () => {
-        driverPriceInput.disabled = !driverToggle.checked;
-      });
+  document.getElementById("openAddProductBtn")?.addEventListener("click", openAddProductModal);
+  document.getElementById("closeAddProduct")?.addEventListener("click", () => {
+    closeAddProductModal();
+    resetProductForm();
+  });
+  document.getElementById("cancelAddProduct")?.addEventListener("click", () => {
+    closeAddProductModal();
+    resetProductForm();
+  });
+
+  const modal = document.getElementById("addProductModal");
+  modal?.addEventListener("click", (e) => {
+    if (e.target === modal) {
+      closeAddProductModal();
+      resetProductForm();
     }
+  });
 
-    rentForm.addEventListener("submit", async function(e) {
-      e.preventDefault();
+  const driverToggle = document.getElementById("equipmentHasDriver");
+  const driverPriceInput = document.getElementById("driverPrice");
+  const imageInput = document.getElementById("equipmentImage");
+  const previewBox = document.getElementById("imagePreviewBox");
+  const previewImg = document.getElementById("imagePreview");
 
-      if (!currentUser) {
-        alert('Please login to submit equipment for rent');
-        return;
-      }
-
-      if (currentUser.role !== 'admin') {
-        alert('Only admin can list equipment for rent.');
-        return;
-      }
-
-      const name = document.getElementById("equipmentName").value;
-      const price = document.getElementById("equipmentPrice").value;
-      const location = document.getElementById("equipmentLocation").value;
-      const hasDriver = document.getElementById("equipmentHasDriver")?.checked;
-      const driverPriceRaw = document.getElementById("driverPrice")?.value;
-      const image = document.getElementById("equipmentImage").files[0];
-
-      if (!name || !price || !location || !image) {
-        formMessage.style.color = "red";
-        formMessage.textContent = "Please fill all fields!";
-        return;
-      }
-
-      let driverPrice = 0;
-      if (hasDriver) {
-        const parsed = parseInt(driverPriceRaw);
-        if (!driverPriceRaw || Number.isNaN(parsed) || parsed < 0) {
-          formMessage.style.color = "red";
-          formMessage.textContent = "Please enter a valid driver price (or uncheck driver).";
-          return;
-        }
-        driverPrice = parsed;
-      }
-
-      // For now, we'll use a placeholder image URL
-      // In a real app, you'd upload the image to a service like Cloudinary
-      // Use base64 so it persists after refresh and can be shown on home page
-      const fileToDataUrl = (file) =>
-        new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-
-      const imageUrl = await fileToDataUrl(image);
-
-      try {
-        const data = await apiCall('/rent/submit', {
-          method: 'POST',
-          body: JSON.stringify({
-            userId: currentUser._id,
-            name,
-            price: parseInt(price),
-            description: `${name} available for rent${hasDriver ? ' with driver' : ''}`,
-            imageUrl,
-            location,
-            hasDriver,
-            driverPrice
-          })
-        });
-
-        formMessage.style.color = "green";
-        formMessage.textContent = `${data.product.name} listed successfully!`;
-        rentForm.reset();
-        
-        // Refresh the equipment list to show the new product
-        await loadEquipments();
-      } catch (error) {
-        formMessage.style.color = "red";
-        formMessage.textContent = error.message || "Something went wrong!";
-      }
+  if (driverToggle && driverPriceInput) {
+    driverToggle.addEventListener("change", () => {
+      driverPriceInput.disabled = !driverToggle.checked;
     });
   }
+
+  imageInput?.addEventListener("change", async () => {
+    const file = imageInput.files?.[0];
+    if (!file || !previewImg || !previewBox) return;
+    try {
+      const previewUrl = await resizeImageToSquare(file, 400, 0.85);
+      previewImg.src = previewUrl;
+      previewBox.hidden = false;
+    } catch {
+      previewBox.hidden = true;
+    }
+  });
+
+  rentForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    if (!currentUser || currentUser.role !== "admin") {
+      alert("Only admin can list equipment.");
+      return;
+    }
+
+    const name = document.getElementById("equipmentName").value.trim();
+    const price = document.getElementById("equipmentPrice").value;
+    const location = document.getElementById("equipmentLocation").value.trim();
+    const hasDriver = document.getElementById("equipmentHasDriver")?.checked;
+    const driverPriceRaw = document.getElementById("driverPrice")?.value;
+    const image = document.getElementById("equipmentImage").files[0];
+    const submitBtn = rentForm.querySelector('button[type="submit"]');
+
+    if (!name || !price || !location || !image) {
+      formMessage.style.color = "#c62828";
+      formMessage.textContent = "Please fill all fields and choose an image.";
+      return;
+    }
+
+    let driverPrice = 0;
+    if (hasDriver) {
+      const parsed = parseInt(driverPriceRaw, 10);
+      if (Number.isNaN(parsed) || parsed < 0) {
+        formMessage.style.color = "#c62828";
+        formMessage.textContent = "Enter a valid driver price.";
+        return;
+      }
+      driverPrice = parsed;
+    }
+
+    submitBtn.disabled = true;
+    formMessage.textContent = "Uploading…";
+
+    try {
+      const imageUrl = await resizeImageToSquare(image, 800, 0.85);
+
+      const data = await apiCall("/rent/submit", {
+        method: "POST",
+        body: JSON.stringify({
+          name,
+          price: parseInt(price, 10),
+          description: `${name} available for rent${hasDriver ? " with driver" : ""}`,
+          imageUrl,
+          location,
+          hasDriver,
+          driverPrice,
+        }),
+      });
+
+      formMessage.style.color = "#2e7d32";
+      formMessage.textContent = `${data.product.name} listed successfully!`;
+      resetProductForm();
+      closeAddProductModal();
+      await loadEquipments();
+    } catch (error) {
+      formMessage.style.color = "#c62828";
+      formMessage.textContent = error.message || "Something went wrong.";
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
 }
 
-// ---------- Close mobile menu when clicking outside ----------
 function setupMobileMenuClose() {
-  document.addEventListener('click', function(event) {
-    const mobileNav = document.getElementById('mobileNav');
-    const hamburger = document.querySelector('.hamburger');
-    
-    if (mobileNav && mobileNav.classList.contains('show')) {
-      // Check if click is outside mobile menu and hamburger
-      if (!mobileNav.contains(event.target) && !hamburger.contains(event.target)) {
-        mobileNav.classList.remove('show');
-        document.body.classList.remove('menu-open');
-        if (hamburger) hamburger.classList.remove('active');
+  document.addEventListener("click", (event) => {
+    const mobileNav = document.getElementById("mobileNav");
+    const hamburger = document.querySelector(".hamburger");
+    if (mobileNav?.classList.contains("show")) {
+      if (!mobileNav.contains(event.target) && !hamburger?.contains(event.target)) {
+        mobileNav.classList.remove("show");
+        document.body.classList.remove("menu-open");
+        hamburger?.classList.remove("active");
       }
     }
   });
-  
-  // Close menu when clicking on navigation links
-  const mobileNavLinks = document.querySelectorAll('.mobile-nav a');
-  mobileNavLinks.forEach(link => {
-    link.addEventListener('click', () => {
-      const mobileNav = document.getElementById('mobileNav');
-      const hamburger = document.querySelector('.hamburger');
-      if (mobileNav) mobileNav.classList.remove('show');
-      if (hamburger) hamburger.classList.remove('active');
-      document.body.classList.remove('menu-open');
+
+  document.querySelectorAll(".mobile-nav a").forEach((link) => {
+    link.addEventListener("click", () => {
+      document.getElementById("mobileNav")?.classList.remove("show");
+      document.querySelector(".hamburger")?.classList.remove("active");
+      document.body.classList.remove("menu-open");
     });
   });
 }
 
-// ---------- Initialize when DOM is loaded ----------
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener("DOMContentLoaded", () => {
+  document.body.classList.add("light-mode");
   initApp();
   setupAuthModals();
   setupRentForm();
   setupMobileMenuClose();
 });
 
-// Export functions for global access
-window.rentNow = addToCart;
+window.addToCart = addToCart;
 window.addToFav = addToFav;
-window.removeItem = removeFromCart;
-window.removeFav = removeFromFav;
+window.removeFromCart = removeFromCart;
+window.removeFromFav = removeFromFav;
 window.toggleCart = toggleCart;
 window.toggleFav = toggleFav;
 window.toggleMenu = toggleMenu;
@@ -749,17 +831,21 @@ window.payNow = payNow;
 window.searchItem = searchItem;
 window.toggleTheme = toggleTheme;
 window.logout = logout;
-window.deleteProduct = async function(id) {
-  if (!currentUser) {
-    alert('Please login to delete products');
+
+window.openAddProductModal = openAddProductModal;
+window.closeAddProductModal = closeAddProductModal;
+
+window.deleteProduct = async function (id) {
+  if (!currentUser || currentUser.role !== "admin") {
+    alert("Only admin can delete listings");
     return;
   }
-  if (!confirm('Delete this product?')) return;
+  if (!confirm("Delete this listing?")) return;
   try {
-    await apiCall(`/card/${id}`, { method: 'DELETE' });
+    await apiCall(`/card/${id}`, { method: "DELETE" });
     await loadEquipments();
-    alert('Deleted');
+    alert("Deleted");
   } catch (e) {
-    alert(e.message || 'Failed to delete');
+    alert(e.message || "Failed to delete");
   }
-}
+};

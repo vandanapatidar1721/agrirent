@@ -40,8 +40,9 @@ const userSchema = new mongoose.Schema(
     cart: [
       {
         product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
-        quantity: { type: Number, default: 1 }
-      }
+        quantity: { type: Number, default: 1 },
+        driverSelected: { type: Boolean, default: false },
+      },
     ],
     favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }]
   },

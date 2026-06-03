@@ -8,7 +8,12 @@ const productSchema = new mongoose.Schema({
   location: { type: String },
   hasDriver: { type: Boolean, default: false },
   driverPrice: { type: Number, default: 0 },
-  owner: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-});
+  /** Foreign key → User (admin who listed this product). Same idea as userId in SQL. */
+  owner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    index: true,
+  },
+}, { timestamps: true });
 
 module.exports = mongoose.model("Product", productSchema);

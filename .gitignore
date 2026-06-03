@@ -8,6 +8,8 @@ node_modules/
 
 # Keep example env files for teammates
 !.env.example
+!backend/.env.example
+!frontend/js/config.example.js
 
 # Logs and debug output
 logs/

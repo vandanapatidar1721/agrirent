@@ -10,6 +10,5 @@ router.post(
   allowRoles("admin"),
   rentController.submitRent
 );
-router.get("/all", rentController.getAllRents);
 
 module.exports = router;

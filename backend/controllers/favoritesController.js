@@ -1,13 +1,14 @@
 const User = require("../models/User");
-
-function resolveUserId(req) {
-  return (req.user && req.user.id) || req.body.userId;
-}
+const { getSanitizedProfile } = require("../utils/userProfile");
 
 async function toggleFavorite(req, res) {
   try {
     const { productId } = req.body;
-    const id = resolveUserId(req);
+    const id = req.user.id;
+
+    if (!productId) {
+      return res.status(400).json({ error: "productId is required" });
+    }
 
     const user = await User.findById(id);
     if (!user) {
@@ -21,7 +22,8 @@ async function toggleFavorite(req, res) {
     }
 
     await user.save();
-    res.status(200).json(user.favorites);
+    const profile = await getSanitizedProfile(id);
+    res.status(200).json({ message: "Favorites updated", user: profile });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

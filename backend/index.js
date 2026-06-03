@@ -1,15 +1,28 @@
 const dotenv = require("dotenv");
-const app = require("./app");
-const connectDatabase = require("./config/database");
 
 dotenv.config();
 
-const PORT = process.env.PORT || 5000;
+const { config, validateEnv } = require("./config/env");
+const app = require("./app");
+const connectDatabase = require("./config/database");
+const seedProductsIfEmpty = require("./config/seed");
+
+validateEnv();
 
 connectDatabase()
+  .then(async () => {
+    if (config.enableSeed) {
+      await seedProductsIfEmpty();
+    } else {
+      console.log("Demo seed disabled (ENABLE_SEED=false)");
+    }
+  })
   .then(() => {
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+    app.listen(config.port, () => {
+      console.log(`Server running on port ${config.port} (${config.nodeEnv})`);
+      console.log(
+        `API logging: ${config.enableApiLogging ? "ON" : "OFF"} (ENABLE_API_LOGGING)`
+      );
     });
   })
-  .catch((err) => console.error("DB Connection Failed", err));
+  .catch((err) => console.error("Startup failed:", err.message));
