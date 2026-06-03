@@ -3,6 +3,8 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 const { config, validateEnv } = require("./config/env");
+console.log("CORS origins:", config.corsOrigins);
+console.log("Raw CORS_ORIGIN env:", process.env.CORS_ORIGIN);
 const app = require("./app");
 const connectDatabase = require("./config/database");
 const seedProductsIfEmpty = require("./config/seed");
